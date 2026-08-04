@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+.DS_Store
+.gradle/
+build/
+backend/.gradle/
+backend/build/
+frontend/node_modules/
+node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/
+.env
+*.log
+data/
