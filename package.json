@@ -1,0 +1,16 @@
+{
+  "name": "talkon",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "setup": "npm install --prefix frontend",
+    "dev": "concurrently -k -n backend,frontend -c blue,green \"./gradlew :backend:bootRun\" \"npm run dev --prefix frontend\"",
+    "test": "./gradlew :backend:test && npm test --prefix frontend",
+    "typecheck": "npm run typecheck --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "build": "./gradlew :backend:bootJar && npm run build --prefix frontend"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.0"
+  }
+}
