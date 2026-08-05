@@ -8,9 +8,12 @@
     "test": "./gradlew :backend:test && npm test --prefix frontend",
     "typecheck": "npm run typecheck --prefix frontend",
     "lint": "npm run lint --prefix frontend",
+    "format": "./gradlew :backend:spotlessApply && prettier --write \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\"",
+    "format:check": "./gradlew :backend:spotlessCheck && prettier --check \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\"",
     "build": "./gradlew :backend:bootJar && npm run build --prefix frontend"
   },
   "devDependencies": {
-    "concurrently": "9.2.0"
+    "concurrently": "9.2.0",
+    "prettier": "^3.6.2"
   }
 }

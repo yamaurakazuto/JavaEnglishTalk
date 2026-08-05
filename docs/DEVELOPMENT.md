@@ -1,3 +1,5 @@
+<!-- TalkOnのセットアップ・起動・検証方法を説明します。開発環境を迷わず再現できるようにする手順書です。 -->
+
 # TalkOn Phase 1 開発・起動手順
 
 ## 必要な環境
@@ -20,17 +22,17 @@ OpenAPI UIは `http://localhost:8080/swagger-ui/index.html`、仕様JSONは `htt
 
 ## 環境変数
 
-| 変数 | 説明 | 既定値 |
-|---|---|---|
-| `DB_URL` | JDBC URL | リポジトリ内 `data/talkon` のH2 |
-| `DB_USER` | DBユーザー | `sa` |
-| `DB_PASSWORD` | DBパスワード | 空 |
-| `CORS_ORIGIN` | 許可するフロントOrigin（単一） | `http://localhost:5173` |
-| `COOKIE_SECURE` | HTTPS環境でCookieへSecureを付与 | `false` |
-| `OPENAI_API_KEY` | OpenAI互換APIキー。空ならFake LLM | 空 |
-| `OPENAI_BASE_URL` | OpenAI互換APIのベースURL | `https://api.openai.com/v1` |
-| `OPENAI_MODEL` | 使用モデル | `gpt-4.1-mini` |
-| `VITE_API_URL` | ブラウザから見たAPI URL | `http://localhost:8080` |
+| 変数              | 説明                              | 既定値                          |
+| ----------------- | --------------------------------- | ------------------------------- |
+| `DB_URL`          | JDBC URL                          | リポジトリ内 `data/talkon` のH2 |
+| `DB_USER`         | DBユーザー                        | `sa`                            |
+| `DB_PASSWORD`     | DBパスワード                      | 空                              |
+| `CORS_ORIGIN`     | 許可するフロントOrigin（単一）    | `http://localhost:5173`         |
+| `COOKIE_SECURE`   | HTTPS環境でCookieへSecureを付与   | `false`                         |
+| `OPENAI_API_KEY`  | OpenAI互換APIキー。空ならFake LLM | 空                              |
+| `OPENAI_BASE_URL` | OpenAI互換APIのベースURL          | `https://api.openai.com/v1`     |
+| `OPENAI_MODEL`    | 使用モデル                        | `gpt-4.1-mini`                  |
+| `VITE_API_URL`    | ブラウザから見たAPI URL           | `http://localhost:8080`         |
 
 ## テスト
 

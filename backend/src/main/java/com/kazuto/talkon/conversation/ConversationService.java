@@ -1,61 +1,228 @@
+// 会話の開始・送信・終了・フィードバック生成を制御します。状態遷移とトランザクション境界を一箇所で管理するServiceです。
+
 package com.kazuto.talkon.conversation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kazuto.talkon.common.ApiException;
-import com.kazuto.talkon.feedback.*;
+import com.kazuto.talkon.feedback.ConversationFeedback;
+import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
+import com.kazuto.talkon.feedback.FeedbackData;
 import com.kazuto.talkon.llm.ConversationAiClient;
 import com.kazuto.talkon.user.UserRepository;
 import jakarta.validation.Validator;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import java.util.List;
 
 @Service
 public class ConversationService {
- private final ConversationSessionRepository sessions; private final ConversationMessageRepository messages;
- private final ConversationFeedbackRepository feedbacks; private final UserRepository users; private final ConversationAiClient ai;
- private final ObjectMapper mapper; private final Validator validator; private final TransactionTemplate tx;
- public ConversationService(ConversationSessionRepository s,ConversationMessageRepository m,ConversationFeedbackRepository f,UserRepository u,ConversationAiClient a,ObjectMapper o,Validator v,TransactionTemplate tx){sessions=s;messages=m;feedbacks=f;users=u;ai=a;mapper=o;validator=v;this.tx=tx;}
+  private final ConversationSessionRepository sessions;
+  private final ConversationMessageRepository messages;
+  private final ConversationFeedbackRepository feedbacks;
+  private final UserRepository users;
+  private final ConversationAiClient ai;
+  private final ObjectMapper mapper;
+  private final Validator validator;
+  private final TransactionTemplate tx;
 
- public StartResult start(Long userId){
-   var existing=sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(userId,ConversationStatus.ACTIVE);
-   if(existing.isPresent()) return new StartResult(detail(existing.get(),userId),false);
-   final String greeting;
-   try{greeting=ai.greeting();}catch(Exception e){throw llm();}
-   var created=tx.execute(status->{var user=users.findLockedById(userId).orElseThrow();var active=sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(userId,ConversationStatus.ACTIVE);if(active.isPresent())return new Created(active.get(),false);var s=sessions.save(new ConversationSession(user));messages.save(new ConversationMessage(s,MessageRole.ASSISTANT,greeting,1));return new Created(s,true);});
-   return new StartResult(detail(created.session(),userId),created.created());
- }
- public ConversationDtos.Detail active(Long userId){return sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(userId,ConversationStatus.ACTIVE).map(s->detail(s,userId)).orElse(null);}
- public ConversationDtos.Detail detail(Long id,Long userId){return detail(owned(id,userId),userId);}
- private ConversationDtos.Detail detail(ConversationSession s,Long userId){
-   var ms=messages.findBySessionIdOrderBySequenceNo(s.getId()).stream().map(ConversationDtos::message).toList();
-   var f=feedbacks.findBySessionId(s.getId()).map(x->ConversationDtos.feedback(x,mapper)).orElse(null);
-   return new ConversationDtos.Detail(s.getId(),s.getStatus().name(),s.getStartedAt(),s.getFinishedAt(),ms,f);
- }
- public ConversationDtos.Detail send(Long id,Long userId,String raw){
-   var content=raw==null?"":raw.trim(); if(content.isEmpty()||content.length()>2000) throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","メッセージは1〜2,000文字で入力してください。");
-   tx.executeWithoutResult(x->{var s=locked(id,userId);if(s.getStatus()!=ConversationStatus.ACTIVE)throw conflict("終了済みの会話には送信できません。");if(messages.countBySessionIdAndRole(id,MessageRole.USER)>=50)throw conflict("1会話の上限に達しました。");int n=messages.findBySessionIdOrderBySequenceNo(id).size()+1;messages.save(new ConversationMessage(s,MessageRole.USER,content,n));});
-   String reply; try{reply=ai.reply(messages.findBySessionIdOrderBySequenceNo(id));}catch(Exception e){throw llm();}
-   tx.executeWithoutResult(x->{var s=locked(id,userId);if(s.getStatus()!=ConversationStatus.ACTIVE)throw conflict("会話の状態が変更されました。");int n=messages.findBySessionIdOrderBySequenceNo(id).size()+1;messages.save(new ConversationMessage(s,MessageRole.ASSISTANT,reply,n));});
-   return detail(id,userId);
- }
- public ConversationDtos.Detail finish(Long id,Long userId){
-   tx.executeWithoutResult(x->{var s=locked(id,userId);if(s.getStatus()!=ConversationStatus.ACTIVE)throw conflict("会話を終了できる状態ではありません。");if(messages.countBySessionIdAndRole(id,MessageRole.USER)==0)throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","1件以上メッセージを送信してください。");s.generating();});
-   FeedbackData data=null; Exception failure=null;
-   for(int i=0;i<2;i++){try{var candidate=ai.feedback(messages.findBySessionIdOrderBySequenceNo(id));if(!validator.validate(candidate).isEmpty())throw new IllegalStateException("Invalid feedback");data=candidate;break;}catch(Exception e){failure=e;}}
-   if(data==null){tx.executeWithoutResult(x->locked(id,userId).active());throw llm();}
-   var finalData=data;
-   try{tx.executeWithoutResult(x->{var s=locked(id,userId);if(s.getStatus()!=ConversationStatus.FEEDBACK_GENERATING)throw conflict("会話の状態が変更されました。");if(feedbacks.existsBySessionId(id))throw conflict("フィードバックは生成済みです。");feedbacks.save(new ConversationFeedback(s,finalData,mapper));s.complete();});}
-   catch(DataIntegrityViolationException e){throw conflict("フィードバックは生成済みです。");}
-   return detail(id,userId);
- }
- public ConversationDtos.PageResponse history(Long userId,int page,int size){var safePage=Math.max(0,page);var safeSize=Math.max(1,Math.min(50,size));var p=sessions.findByUserIdOrderByStartedAtDesc(userId,PageRequest.of(safePage,safeSize));var content=p.getContent().stream().map(s->new ConversationDtos.Summary(s.getId(),s.getStatus().name(),s.getStartedAt(),s.getFinishedAt())).toList();return new ConversationDtos.PageResponse(content,p.getNumber(),p.getSize(),p.getTotalElements(),p.getTotalPages());}
- private ConversationSession owned(Long id,Long userId){return sessions.findByIdAndUserId(id,userId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"NOT_FOUND","会話が見つかりません。"));}
- private ConversationSession locked(Long id,Long userId){return sessions.lockOwned(id,userId).orElseThrow(()->new ApiException(HttpStatus.NOT_FOUND,"NOT_FOUND","会話が見つかりません。"));}
- private static ApiException conflict(String m){return new ApiException(HttpStatus.CONFLICT,"CONFLICT",m);} private static ApiException llm(){return new ApiException(HttpStatus.SERVICE_UNAVAILABLE,"LLM_UNAVAILABLE","AIサービスを利用できません。しばらくしてから再試行してください。");}
- public record StartResult(ConversationDtos.Detail detail,boolean created){}
- private record Created(ConversationSession session,boolean created){}
+  public ConversationService(
+      ConversationSessionRepository s,
+      ConversationMessageRepository m,
+      ConversationFeedbackRepository f,
+      UserRepository u,
+      ConversationAiClient a,
+      ObjectMapper o,
+      Validator v,
+      TransactionTemplate tx) {
+    sessions = s;
+    messages = m;
+    feedbacks = f;
+    users = u;
+    ai = a;
+    mapper = o;
+    validator = v;
+    this.tx = tx;
+  }
+
+  public StartResult start(Long userId) {
+    var existing =
+        sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, ConversationStatus.ACTIVE);
+    if (existing.isPresent()) {
+      return new StartResult(detail(existing.get(), userId), false);
+    }
+    final String greeting;
+    try {
+      greeting = ai.greeting();
+    } catch (Exception e) {
+      throw llm();
+    }
+    var created =
+        tx.execute(
+            status -> {
+              var user = users.findLockedById(userId).orElseThrow();
+              var active =
+                  sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(
+                      userId, ConversationStatus.ACTIVE);
+              if (active.isPresent()) {
+                return new Created(active.get(), false);
+              }
+              var s = sessions.save(new ConversationSession(user));
+              messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, greeting, 1));
+              return new Created(s, true);
+            });
+    return new StartResult(detail(created.session(), userId), created.created());
+  }
+
+  public ConversationDtos.Detail active(Long userId) {
+    return sessions
+        .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, ConversationStatus.ACTIVE)
+        .map(s -> detail(s, userId))
+        .orElse(null);
+  }
+
+  public ConversationDtos.Detail detail(Long id, Long userId) {
+    return detail(owned(id, userId), userId);
+  }
+
+  private ConversationDtos.Detail detail(ConversationSession s, Long userId) {
+    var ms =
+        messages.findBySessionIdOrderBySequenceNo(s.getId()).stream()
+            .map(ConversationDtos::message)
+            .toList();
+    var f =
+        feedbacks
+            .findBySessionId(s.getId())
+            .map(x -> ConversationDtos.feedback(x, mapper))
+            .orElse(null);
+    return new ConversationDtos.Detail(
+        s.getId(), s.getStatus().name(), s.getStartedAt(), s.getFinishedAt(), ms, f);
+  }
+
+  public ConversationDtos.Detail send(Long id, Long userId, String raw) {
+    var content = raw == null ? "" : raw.trim();
+    if (content.isEmpty() || content.length() > 2000) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "メッセージは1〜2,000文字で入力してください。");
+    }
+    tx.executeWithoutResult(
+        x -> {
+          var s = locked(id, userId);
+          if (s.getStatus() != ConversationStatus.ACTIVE) {
+            throw conflict("終了済みの会話には送信できません。");
+          }
+          if (messages.countBySessionIdAndRole(id, MessageRole.USER) >= 50) {
+            throw conflict("1会話の上限に達しました。");
+          }
+          int n = messages.findBySessionIdOrderBySequenceNo(id).size() + 1;
+          messages.save(new ConversationMessage(s, MessageRole.USER, content, n));
+        });
+    String reply;
+    try {
+      reply = ai.reply(messages.findBySessionIdOrderBySequenceNo(id));
+    } catch (Exception e) {
+      throw llm();
+    }
+    tx.executeWithoutResult(
+        x -> {
+          var s = locked(id, userId);
+          if (s.getStatus() != ConversationStatus.ACTIVE) {
+            throw conflict("会話の状態が変更されました。");
+          }
+          int n = messages.findBySessionIdOrderBySequenceNo(id).size() + 1;
+          messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, reply, n));
+        });
+    return detail(id, userId);
+  }
+
+  public ConversationDtos.Detail finish(Long id, Long userId) {
+    tx.executeWithoutResult(
+        x -> {
+          var s = locked(id, userId);
+          if (s.getStatus() != ConversationStatus.ACTIVE) {
+            throw conflict("会話を終了できる状態ではありません。");
+          }
+          if (messages.countBySessionIdAndRole(id, MessageRole.USER) == 0) {
+            throw new ApiException(
+                HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "1件以上メッセージを送信してください。");
+          }
+          s.generating();
+        });
+    FeedbackData data = null;
+    for (int i = 0; i < 2; i++) {
+      try {
+        var candidate = ai.feedback(messages.findBySessionIdOrderBySequenceNo(id));
+        if (!validator.validate(candidate).isEmpty()) {
+          throw new IllegalStateException("Invalid feedback");
+        }
+        data = candidate;
+        break;
+      } catch (Exception ignored) {
+        // The specification allows exactly one retry for malformed or unavailable feedback.
+      }
+    }
+    if (data == null) {
+      tx.executeWithoutResult(x -> locked(id, userId).active());
+      throw llm();
+    }
+    var finalData = data;
+    try {
+      tx.executeWithoutResult(
+          x -> {
+            var s = locked(id, userId);
+            if (s.getStatus() != ConversationStatus.FEEDBACK_GENERATING) {
+              throw conflict("会話の状態が変更されました。");
+            }
+            if (feedbacks.existsBySessionId(id)) {
+              throw conflict("フィードバックは生成済みです。");
+            }
+            feedbacks.save(new ConversationFeedback(s, finalData, mapper));
+            s.complete();
+          });
+    } catch (DataIntegrityViolationException e) {
+      throw conflict("フィードバックは生成済みです。");
+    }
+    return detail(id, userId);
+  }
+
+  public ConversationDtos.PageResponse history(Long userId, int page, int size) {
+    var safePage = Math.max(0, page);
+    var safeSize = Math.max(1, Math.min(50, size));
+    var p = sessions.findByUserIdOrderByStartedAtDesc(userId, PageRequest.of(safePage, safeSize));
+    var content =
+        p.getContent().stream()
+            .map(
+                s ->
+                    new ConversationDtos.Summary(
+                        s.getId(), s.getStatus().name(), s.getStartedAt(), s.getFinishedAt()))
+            .toList();
+    return new ConversationDtos.PageResponse(
+        content, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
+  }
+
+  private ConversationSession owned(Long id, Long userId) {
+    return sessions
+        .findByIdAndUserId(id, userId)
+        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "会話が見つかりません。"));
+  }
+
+  private ConversationSession locked(Long id, Long userId) {
+    return sessions
+        .lockOwned(id, userId)
+        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "会話が見つかりません。"));
+  }
+
+  private static ApiException conflict(String m) {
+    return new ApiException(HttpStatus.CONFLICT, "CONFLICT", m);
+  }
+
+  private static ApiException llm() {
+    return new ApiException(
+        HttpStatus.SERVICE_UNAVAILABLE, "LLM_UNAVAILABLE", "AIサービスを利用できません。しばらくしてから再試行してください。");
+  }
+
+  public record StartResult(ConversationDtos.Detail detail, boolean created) {}
+
+  private record Created(ConversationSession session, boolean created) {}
 }
