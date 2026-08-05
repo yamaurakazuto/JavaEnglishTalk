@@ -1,3 +1,5 @@
+-- TalkOnの初期DBスキーマを作成します。テーブル定義をFlywayで再現可能に管理するためのMigrationです。
+
 CREATE TABLE users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   display_name VARCHAR(50) NOT NULL,
@@ -41,4 +43,3 @@ CREATE TABLE conversation_feedbacks (
   created_at DATETIME(6) NOT NULL,
   CONSTRAINT fk_feedback_session FOREIGN KEY (session_id) REFERENCES conversation_sessions(id)
 );
-
