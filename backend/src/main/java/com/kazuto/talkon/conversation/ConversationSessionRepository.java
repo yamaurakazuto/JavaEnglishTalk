@@ -3,6 +3,8 @@
 package com.kazuto.talkon.conversation;
 
 import jakarta.persistence.LockModeType;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,9 @@ public interface ConversationSessionRepository extends JpaRepository<Conversatio
   Optional<ConversationSession> findByIdAndUserId(Long id, Long userId);
 
   Page<ConversationSession> findByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
+
+  List<ConversationSession> findByUserIdAndStartedAtGreaterThanEqualOrderByStartedAtAsc(
+      Long userId, Instant startedAt);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select s from ConversationSession s where s.id=:id and s.user.id=:userId")
