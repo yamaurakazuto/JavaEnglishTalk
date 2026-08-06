@@ -11,6 +11,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { api, ApiError, Conversation, HistoryPage, User } from "./shared/api";
 
 function ErrorBox({ error }: { error: string }) {
@@ -131,54 +132,6 @@ function AuthForm({
         </p>
       </section>
     </main>
-  );
-}
-
-function Home({ user, onLogout }: { user: User; onLogout: () => void }) {
-  const nav = useNavigate();
-  const [active, setActive] = useState<Conversation>();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    api
-      .active()
-      .then(setActive)
-      .catch((e) => setError(e.message));
-  }, []);
-  async function start() {
-    setBusy(true);
-    try {
-      const c = await api.start();
-      nav(`/conversations/${c.id}`);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <Shell user={user} onLogout={onLogout}>
-      <section className="hero">
-        <p className="eyebrow">EVERYDAY ENGLISH PRACTICE</p>
-        <h1>
-          英語で話す一歩を、
-          <br />
-          今日も気軽に。
-        </h1>
-        <p>間違いを気にせず、AIパートナーとの自然な会話を楽しみましょう。</p>
-        <button onClick={start} disabled={busy}>
-          {active ? "進行中の会話を再開" : "新しい会話を始める"}
-        </button>
-        <ErrorBox error={error} />
-      </section>
-      <section className="tip">
-        <span>✦</span>
-        <div>
-          <strong>Conversation tip</strong>
-          <p>短い文からで大丈夫。まずは今日あったことを話してみましょう。</p>
-        </div>
-      </section>
-    </Shell>
   );
 }
 
@@ -386,7 +339,9 @@ export default function App() {
         path="/"
         element={
           user ? (
-            <Home user={user} onLogout={logout} />
+            <Shell user={user} onLogout={logout}>
+              <DashboardPage displayName={user.displayName} />
+            </Shell>
           ) : (
             <Navigate to="/login" />
           )

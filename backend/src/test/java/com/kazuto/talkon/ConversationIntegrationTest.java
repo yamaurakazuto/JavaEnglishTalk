@@ -72,6 +72,11 @@ class ConversationIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("COMPLETED"))
         .andExpect(jsonPath("$.feedback.summary").exists());
+    mvc.perform(get("/api/dashboard").with(auth(owner)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.todayStudySeconds").isNumber())
+        .andExpect(jsonPath("$.totalStudyDays").value(1))
+        .andExpect(jsonPath("$.activities").isArray());
     mvc.perform(
             post("/api/conversations/" + id + "/messages")
                 .with(auth(owner))

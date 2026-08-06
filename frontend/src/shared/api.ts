@@ -32,6 +32,22 @@ export type HistoryPage = {
   totalElements: number;
   totalPages: number;
 };
+
+export type DailyActivity = {
+  date: string;
+  sessionCount: number;
+  studySeconds: number;
+  level: number;
+};
+
+export type DashboardData = {
+  todayStudySeconds: number;
+  currentStreakDays: number;
+  totalStudyDays: number;
+  activeConversationId: number | null;
+  activities: DailyActivity[];
+};
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -81,6 +97,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 export const api = {
   me: () => request<User>("/api/auth/me"),
+  dashboard: () => request<DashboardData>("/api/dashboard"),
   register: (x: { displayName: string; email: string; password: string }) =>
     request<User>("/api/auth/register", {
       method: "POST",
