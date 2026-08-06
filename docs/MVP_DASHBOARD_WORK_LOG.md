@@ -50,9 +50,30 @@ MVPでは高度な分析機能を作り込まず、「現在の学習状況を�
 
 Java側もController、Service、Responseに分け、HTTP受付、集計処理、返却データの役割が混ざらない構成にしています。
 
-## 3. バックエンドへ追加・変更したもの
+## 3. 作業ファイル一覧
 
-### 3.1 ダッシュボードAPI
+今回のダッシュボード実装で作業したファイルは次の通りです。
+
+| 種別 | ファイル名                                                                                | 作業内容                                       |
+| ---- | ----------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
+| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
+| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
+| 変更 | `backend/src/main/java/com/kazuto/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
+| 変更 | `backend/src/test/java/com/kazuto/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
+| 変更 | `backend/src/main/resources/db/migration/V1__initial_schema.sql`                          | Flywayチェックサム維持のため先頭コメントを除去 |
+| 新規 | `frontend/src/features/dashboard/DashboardPage.tsx`                                       | ダッシュボード画面全体と画面遷移の実装         |
+| 新規 | `frontend/src/features/dashboard/StudySummary.tsx`                                        | 今日の学習時間と学習日数の表示                 |
+| 新規 | `frontend/src/features/dashboard/ActivityGrid.tsx`                                        | GitHubの草風学習カレンダーの表示               |
+| 新規 | `frontend/src/features/dashboard/DashboardPage.test.tsx`                                  | ダッシュボード画面のテスト                     |
+| 変更 | `frontend/src/shared/api.ts`                                                              | ダッシュボード用の型とAPI呼び出しを追加        |
+| 変更 | `frontend/src/App.tsx`                                                                    | ログイン後のトップ画面をダッシュボードへ変更   |
+| 変更 | `frontend/src/styles.css`                                                                 | ダッシュボードとモバイル表示のスタイル追加     |
+| 新規 | `docs/MVP_DASHBOARD_WORK_LOG.md`                                                          | 実装内容と判断理由を記録する本作業書           |
+
+## 4. バックエンドへ追加・変更したもの
+
+### 4.1 ダッシュボードAPI
 
 追加したエンドポイントは次の通りです。
 
@@ -72,7 +93,7 @@ GET /api/dashboard
 | `activeConversationId` | 継続中の会話ID。ない場合は `null`  |
 | `activities`           | 日付ごとの回数、学習秒数、色レベル |
 
-### 3.2 追加したJavaファイル
+### 4.2 追加したJavaファイル
 
 #### `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardController.java`
 
@@ -96,7 +117,7 @@ GET /api/dashboard
 
 ダッシュボードAPI専用の返却形式です。日別データは内部の `DailyActivity` レコードにまとめました。
 
-### 3.3 変更したJavaファイル
+### 4.3 変更したJavaファイル
 
 #### `backend/src/main/java/com/kazuto/talkon/conversation/ConversationSessionRepository.java`
 
@@ -106,15 +127,15 @@ GET /api/dashboard
 
 会話を開始した後にダッシュボードAPIを呼び出し、学習時間、学習日数、日別活動が返ることを確認するテストを追加しました。
 
-### 3.4 マイグレーションファイルについて
+### 4.4 マイグレーションファイルについて
 
 `backend/src/main/resources/db/migration/V1__initial_schema.sql` は、以前追加されていた先頭コメントを取り除き、適用時の内容へ戻しました。
 
 Flywayの適用済みマイグレーションは、コメントだけの変更でもチェックサムが変わります。そのため、「全ファイルへ先頭コメントを付ける」というルールの例外として扱い、適用済みファイルは変更しません。
 
-## 4. フロントエンドへ追加・変更したもの
+## 5. フロントエンドへ追加・変更したもの
 
-### 4.1 追加したReactファイル
+### 5.1 追加したReactファイル
 
 #### `frontend/src/features/dashboard/DashboardPage.tsx`
 
@@ -136,7 +157,7 @@ Flywayの適用済みマイグレーションは、コメントだけの変更�
 
 APIの返却データを使い、学習時間と連続日数が表示されること、会話と履歴の操作が表示されることを確認します。
 
-### 4.2 変更したReact・共通ファイル
+### 5.2 変更したReact・共通ファイル
 
 #### `frontend/src/shared/api.ts`
 
@@ -159,7 +180,7 @@ APIの返却データを使い、学習時間と連続日数が表示される�
 
 CSSは既存と同じ一つのファイルへ追加しています。MVP段階では機能単位のCSSファイルを増やさず、見た目を一箇所から確認できることを優先しました。
 
-## 5. 画面とデータの流れ
+## 6. 画面とデータの流れ
 
 ```text
 ログイン後に / を表示
@@ -175,7 +196,7 @@ StudySummary と ActivityGrid が結果を表示
 ユーザーは会話開始または履歴画面へ移動
 ```
 
-## 6. MVPとして割り切った点
+## 7. MVPとして割り切った点
 
 - 集計結果をDBへ保存せず、画面表示のたびにJavaで計算します。
 - 学習量のレベルは会話時間ではなく、その日の会話回数で決めます。
@@ -186,7 +207,7 @@ StudySummary と ActivityGrid が結果を表示
 
 利用者やデータ量が増えた段階で、集計SQL、ユーザーごとのタイムゾーン、日次集計テーブルなどを検討します。
 
-## 7. 動作確認
+## 8. 動作確認
 
 次のコマンドが成功することを確認しました。
 
