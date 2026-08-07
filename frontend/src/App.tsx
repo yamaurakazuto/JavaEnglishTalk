@@ -2,7 +2,7 @@
  * 認証・ホーム・会話・履歴画面とルーティングを構成します。MVPの画面フローを一つの入口で把握できるようにしています。
  */
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useState } from "react";
 import {
   Link,
   Navigate,
@@ -23,6 +23,14 @@ function ErrorBox({ error }: { error: string }) {
       {error}
     </p>
   ) : null;
+}
+
+function StatusBadge({ status }: { status: Conversation["status"] }) {
+  return (
+    <span className={`status-badge ${status.toLowerCase()}`}>
+      {status === "ACTIVE" ? "進行中" : "終了"}
+    </span>
+  );
 }
 
 function Shell({
@@ -180,7 +188,7 @@ function ConversationPage({
   }, [c?.id, c?.feedback?.status]);
   async function send(e: FormEvent) {
     e.preventDefault();
-    if (!c || !text.trim()) {
+    if (!c || !text.trim() || busy) {
       return;
     }
     setBusy(true);
@@ -193,6 +201,13 @@ function ConversationPage({
     } finally {
       setBusy(false);
     }
+  }
+  function sendOnEnter(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.nativeEvent.isComposing) {
+      return;
+    }
+    e.preventDefault();
+    void send(e as unknown as FormEvent);
   }
   async function finish() {
     if (!c) {
@@ -249,6 +264,7 @@ function ConversationPage({
               会話を終了
             </button>
           )}
+          {c?.status === "ENDED" && <StatusBadge status={c.status} />}
         </div>
         {loadState === "LOADING" && (
           <p aria-live="polite">会話を読み込んでいます…</p>
@@ -267,18 +283,23 @@ function ConversationPage({
         )}
         <ErrorBox error={error} />
         {c?.status === "ACTIVE" && (
-          <form className="composer" onSubmit={send}>
-            <textarea
-              aria-label="メッセージ"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              maxLength={2000}
-              placeholder="Type your message in English…"
-            />
-            <button disabled={busy || !text.trim()}>
-              {busy ? "送信中…" : "送信"}
-            </button>
-          </form>
+          <>
+            <form className="composer" onSubmit={send}>
+              <textarea
+                aria-label="メッセージ"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={sendOnEnter}
+                maxLength={2000}
+                rows={2}
+                placeholder="Type your message in English…"
+              />
+              <button disabled={busy || !text.trim()}>
+                {busy ? "送信中…" : "送信"}
+              </button>
+            </form>
+            <p className="composer-hint">Enter で送信 / Shift + Enter で改行</p>
+          </>
         )}
         {c?.status === "ENDED" && (
           <FeedbackPanel
@@ -311,13 +332,19 @@ function History({ user, onLogout }: { user: User; onLogout: () => void }) {
           <Link key={c.id} to={`/history/${c.id}`}>
             <div>
               <strong>{new Date(c.startedAt).toLocaleString()}</strong>
-              <span>{c.status}</span>
+              <StatusBadge status={c.status} />
             </div>
             <span>詳細を見る →</span>
           </Link>
         ))}
-        {data?.content.length === 0 && <p>まだ会話履歴がありません。</p>}
       </div>
+      {data?.content.length === 0 && (
+        <p className="history-empty">
+          まだ会話履歴がありません。
+          <br />
+          ダッシュボードから最初の会話を始めてみましょう。
+        </p>
+      )}
     </Shell>
   );
 }
