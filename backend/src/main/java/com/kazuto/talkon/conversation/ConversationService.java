@@ -6,25 +6,32 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kazuto.talkon.common.ApiException;
 import com.kazuto.talkon.feedback.ConversationFeedback;
 import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
-import com.kazuto.talkon.feedback.FeedbackData;
+import com.kazuto.talkon.feedback.FeedbackGenerationService;
+import com.kazuto.talkon.feedback.FeedbackStatus;
 import com.kazuto.talkon.llm.ConversationAiClient;
 import com.kazuto.talkon.user.UserRepository;
-import jakarta.validation.Validator;
-import org.springframework.dao.DataIntegrityViolationException;
+import java.time.Duration;
+import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class ConversationService {
+  private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
+
   private final ConversationSessionRepository sessions;
   private final ConversationMessageRepository messages;
   private final ConversationFeedbackRepository feedbacks;
   private final UserRepository users;
   private final ConversationAiClient ai;
   private final ObjectMapper mapper;
-  private final Validator validator;
+  private final FeedbackGenerationService feedbackGenerator;
   private final TransactionTemplate tx;
 
   public ConversationService(
@@ -33,16 +40,16 @@ public class ConversationService {
       ConversationFeedbackRepository f,
       UserRepository u,
       ConversationAiClient a,
-      ObjectMapper o,
-      Validator v,
+      ObjectMapper mapper,
+      FeedbackGenerationService feedbackGenerator,
       TransactionTemplate tx) {
     sessions = s;
     messages = m;
     feedbacks = f;
     users = u;
     ai = a;
-    mapper = o;
-    validator = v;
+    this.mapper = mapper;
+    this.feedbackGenerator = feedbackGenerator;
     this.tx = tx;
   }
 
@@ -101,6 +108,7 @@ public class ConversationService {
   }
 
   public ConversationDtos.Detail send(Long id, Long userId, String raw) {
+    Instant startedAt = Instant.now();
     var content = raw == null ? "" : raw.trim();
     if (content.isEmpty() || content.length() > 2000) {
       throw new ApiException(
@@ -133,10 +141,16 @@ public class ConversationService {
           int n = messages.findBySessionIdOrderBySequenceNo(id).size() + 1;
           messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, reply, n));
         });
+    log.info(
+        "userId={} conversationId={} action=sendMessage status=COMPLETED durationMs={}",
+        userId,
+        id,
+        Duration.between(startedAt, Instant.now()).toMillis());
     return detail(id, userId);
   }
 
   public ConversationDtos.Detail finish(Long id, Long userId) {
+    Instant startedAt = Instant.now();
     tx.executeWithoutResult(
         x -> {
           var s = locked(id, userId);
@@ -147,43 +161,61 @@ public class ConversationService {
             throw new ApiException(
                 HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "1件以上メッセージを送信してください。");
           }
-          s.generating();
+          s.end();
+          feedbacks.save(new ConversationFeedback(s));
+          runAfterCommit(() -> feedbackGenerator.generate(id, userId));
         });
-    FeedbackData data = null;
-    for (int i = 0; i < 2; i++) {
-      try {
-        var candidate = ai.feedback(messages.findBySessionIdOrderBySequenceNo(id));
-        if (!validator.validate(candidate).isEmpty()) {
-          throw new IllegalStateException("Invalid feedback");
-        }
-        data = candidate;
-        break;
-      } catch (Exception ignored) {
-        // The specification allows exactly one retry for malformed or unavailable feedback.
-      }
-    }
-    if (data == null) {
-      tx.executeWithoutResult(x -> locked(id, userId).active());
-      throw llm();
-    }
-    var finalData = data;
-    try {
-      tx.executeWithoutResult(
-          x -> {
-            var s = locked(id, userId);
-            if (s.getStatus() != ConversationStatus.FEEDBACK_GENERATING) {
-              throw conflict("会話の状態が変更されました。");
-            }
-            if (feedbacks.existsBySessionId(id)) {
-              throw conflict("フィードバックは生成済みです。");
-            }
-            feedbacks.save(new ConversationFeedback(s, finalData, mapper));
-            s.complete();
-          });
-    } catch (DataIntegrityViolationException e) {
-      throw conflict("フィードバックは生成済みです。");
-    }
+    log.info(
+        "userId={} conversationId={} action=finishConversation status=ENDED durationMs={}",
+        userId,
+        id,
+        Duration.between(startedAt, Instant.now()).toMillis());
     return detail(id, userId);
+  }
+
+  public ConversationDtos.Detail retryFeedback(Long id, Long userId) {
+    tx.executeWithoutResult(
+        ignored -> {
+          owned(id, userId);
+          var feedback =
+              feedbacks.findBySessionId(id).orElseThrow(() -> conflict("フィードバックが見つかりません。"));
+          if (feedback.getStatus() != FeedbackStatus.FAILED) {
+            throw conflict("再生成できる状態ではありません。");
+          }
+          feedback.retry();
+          runAfterCommit(() -> feedbackGenerator.generate(id, userId));
+        });
+    return detail(id, userId);
+  }
+
+  public ConversationDtos.MessageResponse translate(
+      Long conversationId, Long messageId, Long userId) {
+    owned(conversationId, userId);
+    var message =
+        messages
+            .findByIdAndSessionId(messageId, conversationId)
+            .orElseThrow(
+                () -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "メッセージが見つかりません。"));
+    if (message.getRole() != MessageRole.ASSISTANT) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "AIメッセージだけ翻訳できます。");
+    }
+    if (message.getTranslation() == null) {
+      String translated;
+      try {
+        translated = ai.translate(message.getContent());
+      } catch (Exception exception) {
+        throw llm();
+      }
+      String finalTranslated = translated;
+      tx.executeWithoutResult(
+          ignored ->
+              messages
+                  .findByIdAndSessionId(messageId, conversationId)
+                  .orElseThrow()
+                  .translate(finalTranslated));
+    }
+    return ConversationDtos.message(
+        messages.findByIdAndSessionId(messageId, conversationId).orElseThrow());
   }
 
   public ConversationDtos.PageResponse history(Long userId, int page, int size) {
@@ -220,6 +252,16 @@ public class ConversationService {
   private static ApiException llm() {
     return new ApiException(
         HttpStatus.SERVICE_UNAVAILABLE, "LLM_UNAVAILABLE", "AIサービスを利用できません。しばらくしてから再試行してください。");
+  }
+
+  private void runAfterCommit(Runnable action) {
+    TransactionSynchronizationManager.registerSynchronization(
+        new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            action.run();
+          }
+        });
   }
 
   public record StartResult(ConversationDtos.Detail detail, boolean created) {}

@@ -11,6 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kazuto.talkon.auth.TalkOnPrincipal;
+import com.kazuto.talkon.conversation.ConversationMessageRepository;
+import com.kazuto.talkon.conversation.ConversationSessionRepository;
+import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
 import com.kazuto.talkon.user.User;
 import com.kazuto.talkon.user.UserRepository;
 import java.util.List;
@@ -31,12 +34,18 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 class ConversationIntegrationTest {
   @Autowired MockMvc mvc;
   @Autowired UserRepository users;
+  @Autowired ConversationFeedbackRepository feedbacks;
+  @Autowired ConversationMessageRepository messages;
+  @Autowired ConversationSessionRepository sessions;
   @Autowired PasswordEncoder encoder;
   User owner;
   User other;
 
   @BeforeEach
   void setup() {
+    feedbacks.deleteAll();
+    messages.deleteAll();
+    sessions.deleteAll();
     users.deleteAll();
     owner = users.save(new User("Owner", "owner@example.com", encoder.encode("password123")));
     other = users.save(new User("Other", "other@example.com", encoder.encode("password123")));
@@ -66,12 +75,21 @@ class ConversationIntegrationTest {
                 .content("{\"content\":\"I like hiking.\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.messages[1].role").value("USER"))
-        .andExpect(jsonPath("$.messages[2].role").value("ASSISTANT"));
+        .andExpect(jsonPath("$.messages[2].role").value("ASSISTANT"))
+        .andExpect(
+            jsonPath("$.messages[2].content")
+                .value(org.hamcrest.Matchers.containsString("I like hiking.")));
     mvc.perform(get("/api/conversations/" + id).with(auth(other))).andExpect(status().isNotFound());
     mvc.perform(post("/api/conversations/" + id + "/finish").with(auth(owner)).with(csrf()))
+        .andExpect(status().isAccepted())
+        .andExpect(jsonPath("$.status").value("ENDED"))
+        .andExpect(jsonPath("$.feedback.status").exists());
+    waitForCompletedFeedback(id);
+    mvc.perform(get("/api/conversations/" + id).with(auth(owner)))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status").value("COMPLETED"))
-        .andExpect(jsonPath("$.feedback.summary").exists());
+        .andExpect(jsonPath("$.feedback.strengths").isArray())
+        .andExpect(jsonPath("$.feedback.improvements").isArray())
+        .andExpect(jsonPath("$.feedback.corrections").isArray());
     mvc.perform(get("/api/dashboard").with(auth(owner)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.todayStudySeconds").isNumber())
@@ -84,5 +102,43 @@ class ConversationIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"content\":\"again\"}"))
         .andExpect(status().isConflict());
+  }
+
+  @Test
+  void assistantMessageCanBeTranslatedWithoutChangingConversation() throws Exception {
+    String json =
+        mvc.perform(post("/api/conversations").with(auth(owner)).with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var conversation = new ObjectMapper().readTree(json);
+    long conversationId = conversation.path("id").asLong();
+    long messageId = conversation.path("messages").path(0).path("id").asLong();
+
+    mvc.perform(
+            post("/api/conversations/" + conversationId + "/messages/" + messageId + "/translation")
+                .with(auth(owner))
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.role").value("ASSISTANT"))
+        .andExpect(jsonPath("$.translation").isNotEmpty());
+  }
+
+  private void waitForCompletedFeedback(long id) throws Exception {
+    for (int attempt = 0; attempt < 20; attempt++) {
+      String body =
+          mvc.perform(get("/api/conversations/" + id).with(auth(owner)))
+              .andExpect(status().isOk())
+              .andReturn()
+              .getResponse()
+              .getContentAsString();
+      if ("COMPLETED"
+          .equals(new ObjectMapper().readTree(body).path("feedback").path("status").asText())) {
+        return;
+      }
+      Thread.sleep(50);
+    }
+    throw new AssertionError("Feedback did not complete");
   }
 }

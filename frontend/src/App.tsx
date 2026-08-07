@@ -12,6 +12,8 @@ import {
   useParams,
 } from "react-router-dom";
 import { DashboardPage } from "./features/dashboard/DashboardPage";
+import { FeedbackPanel } from "./features/conversation/FeedbackPanel";
+import { MessageList } from "./features/conversation/MessageList";
 import { api, ApiError, Conversation, HistoryPage, User } from "./shared/api";
 
 function ErrorBox({ error }: { error: string }) {
@@ -135,55 +137,6 @@ function AuthForm({
   );
 }
 
-function Messages({ conversation }: { conversation: Conversation }) {
-  return (
-    <div className="messages">
-      {conversation.messages.map((m) => (
-        <div key={m.id} className={`message ${m.role.toLowerCase()}`}>
-          <small>{m.role === "USER" ? "You" : "TalkOn"}</small>
-          <p>{m.content}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FeedbackView({ c }: { c: Conversation }) {
-  const f = c.feedback;
-  if (!f) {
-    return null;
-  }
-  return (
-    <section className="feedback">
-      <h2>Conversation feedback</h2>
-      <p>{f.summary}</p>
-      <h3>良かった点</h3>
-      <ul>
-        {f.strengths.map((x) => (
-          <li key={x}>{x}</li>
-        ))}
-      </ul>
-      <h3>改善ポイント</h3>
-      {f.improvements.map((x, i) => (
-        <article key={i}>
-          <del>{x.original}</del>
-          <strong>{x.suggestion}</strong>
-          <p>{x.reason}</p>
-        </article>
-      ))}
-      <h3>代表的な修正</h3>
-      {f.corrections.map((x, i) => (
-        <article key={i}>
-          <del>{x.original}</del>
-          <strong>{x.corrected}</strong>
-          <p>{x.explanation}</p>
-        </article>
-      ))}
-      <blockquote>{f.overallComment}</blockquote>
-    </section>
-  );
-}
-
 function ConversationPage({
   user,
   onLogout,
@@ -196,12 +149,34 @@ function ConversationPage({
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [loadState, setLoadState] = useState<"LOADING" | "SUCCESS" | "ERROR">(
+    "LOADING",
+  );
   useEffect(() => {
+    setLoadState("LOADING");
     api
       .detail(id!)
-      .then(setC)
-      .catch((e) => setError(e.message));
+      .then((conversation) => {
+        setC(conversation);
+        setLoadState("SUCCESS");
+      })
+      .catch((e) => {
+        setError(e.message);
+        setLoadState("ERROR");
+      });
   }, [id]);
+  useEffect(() => {
+    if (c?.feedback?.status !== "GENERATING") {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      api
+        .detail(c.id)
+        .then(setC)
+        .catch((pollError: Error) => setError(pollError.message));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [c?.id, c?.feedback?.status]);
   async function send(e: FormEvent) {
     e.preventDefault();
     if (!c || !text.trim()) {
@@ -232,13 +207,39 @@ function ConversationPage({
       setBusy(false);
     }
   }
+  async function retryFeedback() {
+    if (!c) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      setC(await api.retryFeedback(c.id));
+    } catch (retryError) {
+      setError((retryError as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  function updateMessage(updatedMessage: Conversation["messages"][number]) {
+    setC((current) =>
+      current
+        ? {
+            ...current,
+            messages: current.messages.map((message) =>
+              message.id === updatedMessage.id ? updatedMessage : message,
+            ),
+          }
+        : current,
+    );
+  }
   return (
     <Shell user={user} onLogout={onLogout}>
       <div className="conversation-head">
         <div>
           <p className="eyebrow">FREE CONVERSATION</p>
           <h1>
-            {c?.status === "COMPLETED" ? "会話を振り返る" : "英会話セッション"}
+            {c?.status === "ENDED" ? "会話を振り返る" : "英会話セッション"}
           </h1>
         </div>
         {c?.status === "ACTIVE" && (
@@ -247,7 +248,21 @@ function ConversationPage({
           </button>
         )}
       </div>
-      {c && <Messages conversation={c} />}
+      {loadState === "LOADING" && (
+        <p aria-live="polite">会話を読み込んでいます…</p>
+      )}
+      {loadState === "ERROR" && !c && (
+        <p>
+          会話を表示できません。ダッシュボードへ戻って、もう一度お試しください。
+        </p>
+      )}
+      {c && (
+        <MessageList
+          conversation={c}
+          onMessageUpdated={updateMessage}
+          onError={setError}
+        />
+      )}
       <ErrorBox error={error} />
       {c?.status === "ACTIVE" && (
         <form className="composer" onSubmit={send}>
@@ -263,7 +278,13 @@ function ConversationPage({
           </button>
         </form>
       )}
-      {c?.status === "COMPLETED" && <FeedbackView c={c} />}
+      {c?.status === "ENDED" && (
+        <FeedbackPanel
+          conversation={c}
+          retrying={busy}
+          onRetry={retryFeedback}
+        />
+      )}
     </Shell>
   );
 }

@@ -5,6 +5,8 @@ package com.kazuto.talkon.feedback;
 import com.kazuto.talkon.conversation.ConversationSession;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,39 +27,65 @@ public class ConversationFeedback {
   @JoinColumn(name = "session_id", unique = true)
   private ConversationSession session;
 
-  @Column(nullable = false, columnDefinition = "TEXT")
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private FeedbackStatus status;
+
+  @Column(columnDefinition = "TEXT")
   private String summary;
 
-  @Column(nullable = false, columnDefinition = "JSON")
+  @Column(columnDefinition = "JSON")
   private String strengths;
 
-  @Column(nullable = false, columnDefinition = "JSON")
+  @Column(columnDefinition = "JSON")
   private String improvements;
 
-  @Column(nullable = false, columnDefinition = "JSON")
+  @Column(columnDefinition = "JSON")
   private String corrections;
 
-  @Column(name = "overall_comment", nullable = false, columnDefinition = "TEXT")
+  @Column(name = "overall_comment", columnDefinition = "TEXT")
   private String overallComment;
+
+  @Column(name = "error_message", columnDefinition = "TEXT")
+  private String errorMessage;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
   protected ConversationFeedback() {}
 
-  public ConversationFeedback(
-      ConversationSession s, FeedbackData d, com.fasterxml.jackson.databind.ObjectMapper m) {
+  public ConversationFeedback(ConversationSession s) {
     session = s;
-    summary = d.summary();
-    overallComment = d.overallComment();
+    status = FeedbackStatus.GENERATING;
     createdAt = Instant.now();
+  }
+
+  public void complete(FeedbackData data, com.fasterxml.jackson.databind.ObjectMapper mapper) {
+    summary = data.summary();
+    overallComment = data.overallComment();
     try {
-      strengths = m.writeValueAsString(d.strengths());
-      improvements = m.writeValueAsString(d.improvements());
-      corrections = m.writeValueAsString(d.corrections());
+      strengths = mapper.writeValueAsString(data.strengths());
+      improvements = mapper.writeValueAsString(data.improvements());
+      corrections = mapper.writeValueAsString(data.corrections());
     } catch (Exception e) {
       throw new IllegalArgumentException(e);
     }
+    status = FeedbackStatus.COMPLETED;
+    errorMessage = null;
+  }
+
+  public void fail() {
+    status = FeedbackStatus.FAILED;
+    errorMessage = "フィードバックの生成に失敗しました。もう一度試してください。";
+  }
+
+  public void retry() {
+    status = FeedbackStatus.GENERATING;
+    errorMessage = null;
+  }
+
+  public FeedbackStatus getStatus() {
+    return status;
   }
 
   public String getSummary() {
@@ -78,6 +106,10 @@ public class ConversationFeedback {
 
   public String getOverallComment() {
     return overallComment;
+  }
+
+  public String getErrorMessage() {
+    return errorMessage;
   }
 
   public Instant getCreatedAt() {

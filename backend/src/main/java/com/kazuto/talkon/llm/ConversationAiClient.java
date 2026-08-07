@@ -11,5 +11,7 @@ public interface ConversationAiClient {
 
   String reply(List<ConversationMessage> messages);
 
+  String translate(String englishText);
+
   FeedbackData feedback(List<ConversationMessage> messages);
 }

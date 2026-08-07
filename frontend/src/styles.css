@@ -347,6 +347,18 @@ main {
   margin: 0.4rem 0;
   line-height: 1.6;
 }
+.translation {
+  padding-top: 10px;
+  border-top: 1px solid #dce6e1;
+  color: #526961;
+}
+.translation-button {
+  padding: 6px 0;
+  border-radius: 0;
+  background: transparent;
+  color: #176b52;
+  font-size: 0.82rem;
+}
 .assistant {
   background: #fff;
   border: 1px solid #dce6e1;
@@ -395,6 +407,20 @@ main {
   padding: 20px;
   background: #eef7f2;
   border-left: 4px solid #176b52;
+}
+.feedback-state {
+  text-align: center;
+}
+.fatal-error {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  text-align: center;
+}
+.fatal-error h1,
+.fatal-error p {
+  margin: 0;
 }
 .history {
   display: grid;

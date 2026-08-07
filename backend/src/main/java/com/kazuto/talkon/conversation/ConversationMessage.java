@@ -39,6 +39,9 @@ public class ConversationMessage {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String content;
 
+  @Column(columnDefinition = "TEXT")
+  private String translation;
+
   @Column(name = "sequence_no", nullable = false)
   private int sequenceNo;
 
@@ -65,6 +68,14 @@ public class ConversationMessage {
 
   public String getContent() {
     return content;
+  }
+
+  public String getTranslation() {
+    return translation;
+  }
+
+  public void translate(String translatedText) {
+    translation = translatedText;
   }
 
   public int getSequenceNo() {
