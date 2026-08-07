@@ -25,8 +25,9 @@ export function ActivityGrid({ activities }: ActivityGridProps) {
             <span
               key={activity.date}
               className={`activity-cell level-${activity.level}`}
-              aria-label={`${activity.date}: ${activity.sessionCount}回学習`}
-              title={`${activity.date}・${activity.sessionCount}回・${formatDuration(activity.studySeconds)}`}
+              tabIndex={0}
+              aria-label={`${formatDate(activity.date)}、${activity.sessionCount} conversations、${activity.messageCount} messages`}
+              data-tooltip={`${formatDate(activity.date)}\n${activity.sessionCount} conversations\n${activity.messageCount} messages`}
             />
           ))}
         </div>
@@ -43,9 +44,10 @@ export function ActivityGrid({ activities }: ActivityGridProps) {
   );
 }
 
-function formatDuration(seconds: number) {
-  if (seconds < 60) {
-    return seconds > 0 ? "1分未満" : "0分";
-  }
-  return `${Math.floor(seconds / 60)}分`;
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
 }

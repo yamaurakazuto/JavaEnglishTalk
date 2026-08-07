@@ -14,6 +14,7 @@ import com.kazuto.talkon.auth.TalkOnPrincipal;
 import com.kazuto.talkon.conversation.ConversationMessageRepository;
 import com.kazuto.talkon.conversation.ConversationSessionRepository;
 import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
+import com.kazuto.talkon.user.EnglishLevel;
 import com.kazuto.talkon.user.User;
 import com.kazuto.talkon.user.UserRepository;
 import java.util.List;
@@ -49,6 +50,9 @@ class ConversationIntegrationTest {
     users.deleteAll();
     owner = users.save(new User("Owner", "owner@example.com", encoder.encode("password123")));
     other = users.save(new User("Other", "other@example.com", encoder.encode("password123")));
+    owner.selectEnglishLevel(EnglishLevel.BEGINNER);
+    other.selectEnglishLevel(EnglishLevel.INTERMEDIATE);
+    users.saveAll(List.of(owner, other));
   }
 
   private RequestPostProcessor auth(User u) {
@@ -67,6 +71,9 @@ class ConversationIntegrationTest {
             .getResponse()
             .getContentAsString();
     long id = new ObjectMapper().readTree(json).path("id").asLong();
+    org.assertj.core.api.Assertions.assertThat(
+            new ObjectMapper().readTree(json).path("messages").path(0).path("content").asText())
+        .isEqualTo("Hi! It's nice to meet you. How are you today?");
     mvc.perform(
             post("/api/conversations/" + id + "/messages")
                 .with(auth(owner))
@@ -78,7 +85,7 @@ class ConversationIntegrationTest {
         .andExpect(jsonPath("$.messages[2].role").value("ASSISTANT"))
         .andExpect(
             jsonPath("$.messages[2].content")
-                .value(org.hamcrest.Matchers.containsString("I like hiking.")));
+                .value(org.hamcrest.Matchers.containsString("Oh, I see")));
     mvc.perform(get("/api/conversations/" + id).with(auth(other))).andExpect(status().isNotFound());
     mvc.perform(post("/api/conversations/" + id + "/finish").with(auth(owner)).with(csrf()))
         .andExpect(status().isAccepted())
@@ -88,12 +95,15 @@ class ConversationIntegrationTest {
     mvc.perform(get("/api/conversations/" + id).with(auth(owner)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.feedback.strengths").isArray())
-        .andExpect(jsonPath("$.feedback.improvements").isArray())
-        .andExpect(jsonPath("$.feedback.corrections").isArray());
+        .andExpect(jsonPath("$.feedback.corrections").isArray())
+        .andExpect(jsonPath("$.feedback.vocabularyTips").isArray());
     mvc.perform(get("/api/dashboard").with(auth(owner)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.todayStudySeconds").isNumber())
         .andExpect(jsonPath("$.totalStudyDays").value(1))
+        .andExpect(
+            jsonPath("$.activities[?(@.sessionCount == 1)].messageCount")
+                .value(org.hamcrest.Matchers.hasItem(3)))
         .andExpect(jsonPath("$.activities").isArray());
     mvc.perform(
             post("/api/conversations/" + id + "/messages")

@@ -4,6 +4,8 @@ package com.kazuto.talkon.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -25,6 +27,10 @@ public class User {
 
   @Column(name = "password_hash", nullable = false, length = 100)
   private String passwordHash;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "english_level", length = 20)
+  private EnglishLevel englishLevel;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -56,5 +62,14 @@ public class User {
 
   public String getPasswordHash() {
     return passwordHash;
+  }
+
+  public EnglishLevel getEnglishLevel() {
+    return englishLevel;
+  }
+
+  public void selectEnglishLevel(EnglishLevel level) {
+    englishLevel = level;
+    updatedAt = Instant.now();
   }
 }

@@ -3,6 +3,7 @@
 package com.kazuto.talkon.auth;
 
 import com.kazuto.talkon.common.ApiException;
+import com.kazuto.talkon.user.EnglishLevel;
 import com.kazuto.talkon.user.User;
 import com.kazuto.talkon.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -48,7 +49,8 @@ public class AuthController {
 
   public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
-  public record UserResponse(Long id, String displayName, String email) {}
+  public record UserResponse(
+      Long id, String displayName, String email, EnglishLevel englishLevel) {}
 
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
@@ -108,10 +110,10 @@ public class AuthController {
   @GetMapping("/me")
   public UserResponse me(Authentication a) {
     var p = CurrentUser.require(a);
-    return new UserResponse(p.id(), p.displayName(), p.email());
+    return response(users.findById(p.id()).orElseThrow());
   }
 
   private static UserResponse response(User u) {
-    return new UserResponse(u.getId(), u.getDisplayName(), u.getEmail());
+    return new UserResponse(u.getId(), u.getDisplayName(), u.getEmail(), u.getEnglishLevel());
   }
 }

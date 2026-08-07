@@ -43,6 +43,9 @@ public class ConversationFeedback {
   @Column(columnDefinition = "JSON")
   private String corrections;
 
+  @Column(name = "vocabulary_tips", columnDefinition = "JSON")
+  private String vocabularyTips;
+
   @Column(name = "overall_comment", columnDefinition = "TEXT")
   private String overallComment;
 
@@ -65,8 +68,9 @@ public class ConversationFeedback {
     overallComment = data.overallComment();
     try {
       strengths = mapper.writeValueAsString(data.strengths());
-      improvements = mapper.writeValueAsString(data.improvements());
+      improvements = "[]";
       corrections = mapper.writeValueAsString(data.corrections());
+      vocabularyTips = mapper.writeValueAsString(data.vocabularyTips());
     } catch (Exception e) {
       throw new IllegalArgumentException(e);
     }
@@ -102,6 +106,10 @@ public class ConversationFeedback {
 
   public String getCorrections() {
     return corrections;
+  }
+
+  public String getVocabularyTips() {
+    return vocabularyTips;
   }
 
   public String getOverallComment() {

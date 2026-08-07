@@ -23,8 +23,8 @@ public final class ConversationDtos {
       String status,
       String summary,
       JsonNode strengths,
-      JsonNode improvements,
       JsonNode corrections,
+      JsonNode vocabularyTips,
       String overallComment,
       String errorMessage,
       Instant createdAt) {}
@@ -58,8 +58,8 @@ public final class ConversationDtos {
           f.getStatus().name(),
           f.getSummary(),
           jsonOrEmptyArray(f.getStrengths(), m),
-          jsonOrEmptyArray(f.getImprovements(), m),
           jsonOrEmptyArray(f.getCorrections(), m),
+          jsonOrEmptyArray(f.getVocabularyTips(), m),
           f.getOverallComment(),
           f.getErrorMessage(),
           f.getCreatedAt());

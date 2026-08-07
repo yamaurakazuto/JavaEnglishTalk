@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kazuto.talkon.conversation.ConversationMessage;
 import com.kazuto.talkon.conversation.MessageRole;
+import com.kazuto.talkon.feedback.FeedbackCategory;
 import com.kazuto.talkon.feedback.FeedbackData;
+import com.kazuto.talkon.user.EnglishLevel;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,32 +48,53 @@ public class AiClientConfig {
   }
 
   static class LocalAiClient implements ConversationAiClient {
-    public String greeting() {
-      return "Hi! I'm your English conversation partner. How was your day?";
+    public String greeting(EnglishLevel level) {
+      return switch (level) {
+        case BEGINNER -> "Hi! It's nice to meet you. How are you today?";
+        case INTERMEDIATE -> "Hey! Nice to meet you. How's your day going?";
+        case ADVANCED -> "Hey, great to meet you! What's been the highlight of your day so far?";
+      };
     }
 
-    public String reply(List<ConversationMessage> m) {
-      String latest =
-          m.stream()
-              .filter(x -> x.getRole() == MessageRole.USER)
-              .reduce((first, second) -> second)
-              .map(ConversationMessage::getContent)
-              .orElse("that");
+    public String reply(List<ConversationMessage> m, EnglishLevel level) {
       long turn = m.stream().filter(x -> x.getRole() == MessageRole.USER).count();
       var questions =
           List.of(
               "How did that make you feel?",
               "What happened next?",
               "Would you like to do that again?");
-      String shortLatest = latest.length() > 80 ? latest.substring(0, 80) + "..." : latest;
-      return "Thanks for sharing. You mentioned: "
-          + shortLatest
-          + " "
-          + questions.get((int) ((turn - 1) % questions.size()));
+      if (turn % 3 == 0) {
+        return level == EnglishLevel.BEGINNER
+            ? "Oh, I understand. That sounds nice!"
+            : "I get what you mean. That sounds like quite a day!";
+      }
+      String reaction =
+          level == EnglishLevel.ADVANCED
+              ? "I can relate to that—it sounds memorable. "
+              : "Oh, I see! That sounds interesting. ";
+      return reaction + questions.get((int) ((turn - 1) % questions.size()));
     }
 
     public String translate(String englishText) {
-      return "この英文は「" + englishText + "」という内容です。";
+      if (englishText.contains("How are you today")) {
+        return "今日は元気ですか？";
+      }
+      if (englishText.contains("How's your day going")) {
+        return "今日はどんな一日を過ごしていますか？";
+      }
+      if (englishText.contains("highlight of your day")) {
+        return "今日いちばん印象に残ったことは何ですか？";
+      }
+      if (englishText.contains("How did that make you feel")) {
+        return "それについて、どんな気持ちになりましたか？";
+      }
+      if (englishText.contains("What happened next")) {
+        return "そのあと、どうなりましたか？";
+      }
+      if (englishText.contains("Would you like to do that again")) {
+        return "またやってみたいですか？";
+      }
+      return "なるほど、よく分かります。それは印象に残る出来事ですね。";
     }
 
     public FeedbackData feedback(List<ConversationMessage> m) {
@@ -81,14 +104,22 @@ public class AiClientConfig {
               .findFirst()
               .map(ConversationMessage::getContent)
               .orElse("Your message");
+      var corrections =
+          text.equalsIgnoreCase("Today is tired.")
+              ? List.of(
+                  new FeedbackData.Correction(
+                      text,
+                      "I'm tired today.",
+                      "tired は人の状態を表すため、I を主語にします。",
+                      "I feel tired today.",
+                      FeedbackCategory.GRAMMAR))
+              : List.<FeedbackData.Correction>of();
       return new FeedbackData(
-          "You practiced a friendly everyday conversation.",
-          List.of("You kept the conversation moving."),
-          List.of(
-              new FeedbackData.Improvement(
-                  text, "Review the sentence for clarity and natural phrasing.", text)),
-          List.of(),
-          "Nice work—keep practicing and adding details to your answers.");
+          "日常の話題について英語で会話を続けられました。",
+          List.of("自分の考えを英語で伝え、会話を前へ進められました。"),
+          corrections,
+          List.of("会話では短い文でも、具体的な情報を一つ加えると自然に広がります。"),
+          "よくできました。間違いを恐れず、これからも会話を楽しみましょう。");
     }
   }
 
@@ -104,10 +135,14 @@ public class AiClientConfig {
       this.model = model;
     }
 
-    public String greeting() {
+    public String greeting(EnglishLevel level) {
       return chat(
           List.of(
-              Map.of("role", "system", "content", Prompts.CONVERSATION),
+              Map.of(
+                  "role",
+                  "system",
+                  "content",
+                  Prompts.CONVERSATION + "\nLEVEL POLICY:\n" + Prompts.levelPolicy(level)),
               Map.of(
                   "role",
                   "user",
@@ -115,9 +150,14 @@ public class AiClientConfig {
                   "Start the conversation with one friendly greeting and question.")));
     }
 
-    public String reply(List<ConversationMessage> messages) {
+    public String reply(List<ConversationMessage> messages, EnglishLevel level) {
       var list = new ArrayList<Map<String, String>>();
-      list.add(Map.of("role", "system", "content", Prompts.CONVERSATION));
+      list.add(
+          Map.of(
+              "role",
+              "system",
+              "content",
+              Prompts.CONVERSATION + "\nLEVEL POLICY:\n" + Prompts.levelPolicy(level)));
       messages.stream()
           .skip(Math.max(0, messages.size() - 20))
           .forEach(

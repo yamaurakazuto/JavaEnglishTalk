@@ -20,6 +20,7 @@ test("学習時間、継続情報、会話と履歴の導線を表示する", as
       {
         date: "2026-08-06",
         sessionCount: 1,
+        messageCount: 18,
         studySeconds: 1_800,
         level: 1,
       },
@@ -35,6 +36,9 @@ test("学習時間、継続情報、会話と履歴の導線を表示する", as
 
   expect(await screen.findByText("30分")).toBeInTheDocument();
   expect(screen.getByText("3日")).toBeInTheDocument();
+  expect(
+    screen.getByLabelText("2026年8月6日、1 conversations、18 messages"),
+  ).toBeInTheDocument();
   expect(
     screen.getByRole("button", { name: /新しい会話/ }),
   ).toBeInTheDocument();

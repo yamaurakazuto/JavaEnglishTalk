@@ -17,20 +17,31 @@ export function MessageList({
   onError,
 }: MessageListProps) {
   const [translatingId, setTranslatingId] = useState<number>();
+  const [openTranslations, setOpenTranslations] = useState<number[]>([]);
 
   async function showTranslation(message: Message) {
     if (message.translation) {
+      toggleTranslation(message.id);
       return;
     }
     setTranslatingId(message.id);
     onError("");
     try {
       onMessageUpdated(await api.translate(conversation.id, message.id));
+      setOpenTranslations((current) => [...current, message.id]);
     } catch (error) {
       onError((error as Error).message);
     } finally {
       setTranslatingId(undefined);
     }
+  }
+
+  function toggleTranslation(messageId: number) {
+    setOpenTranslations((current) =>
+      current.includes(messageId)
+        ? current.filter((id) => id !== messageId)
+        : [...current, messageId],
+    );
   }
 
   return (
@@ -44,22 +55,23 @@ export function MessageList({
           <p>{message.content}</p>
           {message.role === "ASSISTANT" && (
             <>
-              {message.translation ? (
+              {message.translation && openTranslations.includes(message.id) && (
                 <p className="translation" lang="ja">
                   {message.translation}
                 </p>
-              ) : (
-                <button
-                  className="translation-button"
-                  type="button"
-                  disabled={translatingId === message.id}
-                  onClick={() => showTranslation(message)}
-                >
-                  {translatingId === message.id
-                    ? "翻訳しています…"
-                    : "日本語訳を見る"}
-                </button>
               )}
+              <button
+                className="translation-button"
+                type="button"
+                disabled={translatingId === message.id}
+                onClick={() => showTranslation(message)}
+              >
+                {translatingId === message.id
+                  ? "翻訳しています…"
+                  : message.translation && openTranslations.includes(message.id)
+                    ? "🌐 日本語訳を閉じる"
+                    : "🌐 日本語訳を見る"}
+              </button>
             </>
           )}
         </div>
