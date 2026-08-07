@@ -11,6 +11,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -49,7 +51,27 @@ public class AiClientConfig {
     }
 
     public String reply(List<ConversationMessage> m) {
-      return "That sounds interesting! Could you tell me a little more about it?";
+      String latest =
+          m.stream()
+              .filter(x -> x.getRole() == MessageRole.USER)
+              .reduce((first, second) -> second)
+              .map(ConversationMessage::getContent)
+              .orElse("that");
+      long turn = m.stream().filter(x -> x.getRole() == MessageRole.USER).count();
+      var questions =
+          List.of(
+              "How did that make you feel?",
+              "What happened next?",
+              "Would you like to do that again?");
+      String shortLatest = latest.length() > 80 ? latest.substring(0, 80) + "..." : latest;
+      return "Thanks for sharing. You mentioned: "
+          + shortLatest
+          + " "
+          + questions.get((int) ((turn - 1) % questions.size()));
+    }
+
+    public String translate(String englishText) {
+      return "この英文は「" + englishText + "」という内容です。";
     }
 
     public FeedbackData feedback(List<ConversationMessage> m) {
@@ -71,6 +93,7 @@ public class AiClientConfig {
   }
 
   static class OpenAiClient implements ConversationAiClient {
+    private static final Logger log = LoggerFactory.getLogger(OpenAiClient.class);
     private final ObjectMapper mapper;
     private final RestClient http;
     private final String model;
@@ -95,15 +118,24 @@ public class AiClientConfig {
     public String reply(List<ConversationMessage> messages) {
       var list = new ArrayList<Map<String, String>>();
       list.add(Map.of("role", "system", "content", Prompts.CONVERSATION));
-      messages.forEach(
-          x ->
-              list.add(
-                  Map.of(
-                      "role",
-                      x.getRole() == MessageRole.USER ? "user" : "assistant",
-                      "content",
-                      x.getContent())));
+      messages.stream()
+          .skip(Math.max(0, messages.size() - 20))
+          .forEach(
+              x ->
+                  list.add(
+                      Map.of(
+                          "role",
+                          x.getRole() == MessageRole.USER ? "user" : "assistant",
+                          "content",
+                          x.getContent())));
       return chat(list);
+    }
+
+    public String translate(String englishText) {
+      return chat(
+          List.of(
+              Map.of("role", "system", "content", Prompts.TRANSLATION),
+              Map.of("role", "user", "content", englishText)));
     }
 
     public FeedbackData feedback(List<ConversationMessage> messages) {
@@ -125,14 +157,28 @@ public class AiClientConfig {
     }
 
     private String chat(List<Map<String, String>> messages) {
-      JsonNode result =
-          http.post()
-              .uri("/chat/completions")
-              .contentType(MediaType.APPLICATION_JSON)
-              .body(Map.of("model", model, "messages", messages, "temperature", 0.5))
-              .retrieve()
-              .body(JsonNode.class);
-      return result.path("choices").path(0).path("message").path("content").asText();
+      long startedAt = System.nanoTime();
+      try {
+        JsonNode result =
+            http.post()
+                .uri("/chat/completions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("model", model, "messages", messages, "temperature", 0.5))
+                .retrieve()
+                .body(JsonNode.class);
+        log.info(
+            "action=callAi status=COMPLETED messageCount={} durationMs={}",
+            messages.size(),
+            Duration.ofNanos(System.nanoTime() - startedAt).toMillis());
+        return result.path("choices").path(0).path("message").path("content").asText();
+      } catch (Exception exception) {
+        log.error(
+            "action=callAi status=FAILED messageCount={} durationMs={}",
+            messages.size(),
+            Duration.ofNanos(System.nanoTime() - startedAt).toMillis(),
+            exception);
+        throw exception;
+      }
     }
   }
 }

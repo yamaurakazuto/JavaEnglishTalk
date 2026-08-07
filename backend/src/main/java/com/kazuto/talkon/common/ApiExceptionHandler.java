@@ -5,6 +5,8 @@ package com.kazuto.talkon.common;
 import jakarta.validation.ConstraintViolationException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+  private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
   @ExceptionHandler(ApiException.class)
   ResponseEntity<ApiError> api(ApiException e) {
     return ResponseEntity.status(e.status())
@@ -42,6 +46,7 @@ public class ApiExceptionHandler {
 
   @ExceptionHandler(Exception.class)
   ResponseEntity<ApiError> other(Exception e) {
+    log.error("action=handleApiException status=FAILED", e);
     return ResponseEntity.status(500)
         .body(new ApiError("INTERNAL_ERROR", "処理に失敗しました。", null, null));
   }

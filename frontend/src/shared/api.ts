@@ -7,19 +7,22 @@ export type Message = {
   id: number;
   role: "USER" | "ASSISTANT";
   content: string;
+  translation: string | null;
   sequenceNo: number;
   createdAt: string;
 };
 export type Feedback = {
-  summary: string;
+  status: "GENERATING" | "COMPLETED" | "FAILED";
+  summary: string | null;
   strengths: string[];
   improvements: { original: string; reason: string; suggestion: string }[];
   corrections: { original: string; corrected: string; explanation: string }[];
-  overallComment: string;
+  overallComment: string | null;
+  errorMessage: string | null;
 };
 export type Conversation = {
   id: number;
-  status: "ACTIVE" | "FEEDBACK_GENERATING" | "COMPLETED";
+  status: "ACTIVE" | "ENDED";
   startedAt: string;
   finishedAt: string | null;
   messages: Message[];
@@ -122,5 +125,14 @@ export const api = {
     request<Conversation>(`/api/conversations/${id}/finish`, {
       method: "POST",
     }),
+  retryFeedback: (id: number) =>
+    request<Conversation>(`/api/conversations/${id}/feedback/retry`, {
+      method: "POST",
+    }),
+  translate: (conversationId: number, messageId: number) =>
+    request<Message>(
+      `/api/conversations/${conversationId}/messages/${messageId}/translation`,
+      { method: "POST" },
+    ),
   history: () => request<HistoryPage>("/api/conversations?page=0&size=20"),
 };

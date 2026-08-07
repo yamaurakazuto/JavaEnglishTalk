@@ -13,10 +13,10 @@ test("登録からフィードバック確認まで", async ({ page }) => {
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード").fill("password123");
   await page.getByRole("button", { name: "ログイン" }).click();
-  await page.getByRole("button", { name: "新しい会話を始める" }).click();
+  await page.getByRole("button", { name: "会話を始める" }).first().click();
   await page.getByLabel("メッセージ").fill("I went hiking this weekend.");
   await page.getByRole("button", { name: "送信" }).click();
-  await expect(page.getByText("That sounds interesting!")).toBeVisible();
+  await expect(page.getByText(/I went hiking this weekend/)).toBeVisible();
   await page.getByRole("button", { name: "会話を終了" }).click();
   await expect(
     page.getByRole("heading", { name: "Conversation feedback" }),

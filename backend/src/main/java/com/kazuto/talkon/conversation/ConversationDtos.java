@@ -12,14 +12,21 @@ public final class ConversationDtos {
   private ConversationDtos() {}
 
   public record MessageResponse(
-      Long id, String role, String content, int sequenceNo, Instant createdAt) {}
+      Long id,
+      String role,
+      String content,
+      String translation,
+      int sequenceNo,
+      Instant createdAt) {}
 
   public record FeedbackResponse(
+      String status,
       String summary,
       JsonNode strengths,
       JsonNode improvements,
       JsonNode corrections,
       String overallComment,
+      String errorMessage,
       Instant createdAt) {}
 
   public record Detail(
@@ -37,20 +44,35 @@ public final class ConversationDtos {
 
   public static MessageResponse message(ConversationMessage m) {
     return new MessageResponse(
-        m.getId(), m.getRole().name(), m.getContent(), m.getSequenceNo(), m.getCreatedAt());
+        m.getId(),
+        m.getRole().name(),
+        m.getContent(),
+        m.getTranslation(),
+        m.getSequenceNo(),
+        m.getCreatedAt());
   }
 
   public static FeedbackResponse feedback(ConversationFeedback f, ObjectMapper m) {
     try {
       return new FeedbackResponse(
+          f.getStatus().name(),
           f.getSummary(),
-          m.readTree(f.getStrengths()),
-          m.readTree(f.getImprovements()),
-          m.readTree(f.getCorrections()),
+          jsonOrEmptyArray(f.getStrengths(), m),
+          jsonOrEmptyArray(f.getImprovements(), m),
+          jsonOrEmptyArray(f.getCorrections(), m),
           f.getOverallComment(),
+          f.getErrorMessage(),
           f.getCreatedAt());
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  private static JsonNode jsonOrEmptyArray(String value, ObjectMapper mapper) throws Exception {
+    if (value == null) {
+      return mapper.createArrayNode();
+    }
+    JsonNode parsed = mapper.readTree(value);
+    return parsed.isTextual() ? mapper.readTree(parsed.asText()) : parsed;
   }
 }

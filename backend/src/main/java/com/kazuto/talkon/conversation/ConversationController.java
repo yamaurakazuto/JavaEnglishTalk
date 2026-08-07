@@ -51,8 +51,20 @@ public class ConversationController {
   }
 
   @PostMapping("/{id}/finish")
-  public ConversationDtos.Detail finish(@PathVariable Long id, Authentication a) {
-    return service.finish(id, CurrentUser.require(a).id());
+  public ResponseEntity<ConversationDtos.Detail> finish(@PathVariable Long id, Authentication a) {
+    return ResponseEntity.accepted().body(service.finish(id, CurrentUser.require(a).id()));
+  }
+
+  @PostMapping("/{id}/feedback/retry")
+  public ResponseEntity<ConversationDtos.Detail> retryFeedback(
+      @PathVariable Long id, Authentication a) {
+    return ResponseEntity.accepted().body(service.retryFeedback(id, CurrentUser.require(a).id()));
+  }
+
+  @PostMapping("/{id}/messages/{messageId}/translation")
+  public ConversationDtos.MessageResponse translate(
+      @PathVariable Long id, @PathVariable Long messageId, Authentication a) {
+    return service.translate(id, messageId, CurrentUser.require(a).id());
   }
 
   @GetMapping

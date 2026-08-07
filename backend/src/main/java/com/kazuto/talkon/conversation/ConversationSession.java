@@ -73,18 +73,8 @@ public class ConversationSession {
     return finishedAt;
   }
 
-  public void generating() {
-    status = ConversationStatus.FEEDBACK_GENERATING;
-    updatedAt = Instant.now();
-  }
-
-  public void active() {
-    status = ConversationStatus.ACTIVE;
-    updatedAt = Instant.now();
-  }
-
-  public void complete() {
-    status = ConversationStatus.COMPLETED;
+  public void end() {
+    status = ConversationStatus.ENDED;
     finishedAt = Instant.now();
     updatedAt = finishedAt;
   }
