@@ -41,4 +41,3 @@ CREATE TABLE conversation_feedbacks (
   created_at DATETIME(6) NOT NULL,
   CONSTRAINT fk_feedback_session FOREIGN KEY (session_id) REFERENCES conversation_sessions(id)
 );
-

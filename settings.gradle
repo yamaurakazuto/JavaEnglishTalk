@@ -1,3 +1,5 @@
+// Gradleのルート名とモジュール構成を定義します。バックエンドを単一ビルドへ参加させるための設定です。
+
 rootProject.name = 'talkon'
 include 'backend'
 
