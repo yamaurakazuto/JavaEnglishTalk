@@ -99,7 +99,7 @@ public class SecurityConfig {
     csrf.setCookiePath("/");
     var cors = new CorsConfiguration();
     cors.setAllowedOrigins(List.of(origin));
-    cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+    cors.setAllowedMethods(List.of("GET", "POST", "PUT", "OPTIONS"));
     cors.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN"));
     cors.setAllowCredentials(true);
     var source = new UrlBasedCorsConfigurationSource();

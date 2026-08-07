@@ -5,6 +5,7 @@ package com.kazuto.talkon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -79,6 +80,16 @@ class AuthIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"login@example.com\",\"password\":\"wrong-password\"}"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void englishLevelUpdateAllowsCorsPreflight() throws Exception {
+    mvc.perform(
+            options("/api/users/me/english-level")
+                .header("Origin", "http://localhost:5173")
+                .header("Access-Control-Request-Method", "PUT")
+                .header("Access-Control-Request-Headers", "content-type,x-xsrf-token"))
+        .andExpect(status().isOk());
   }
 
   @Test
