@@ -2,6 +2,7 @@
 
 package com.kazuto.talkon.dashboard;
 
+import com.kazuto.talkon.conversation.ConversationMessageRepository;
 import com.kazuto.talkon.conversation.ConversationSession;
 import com.kazuto.talkon.conversation.ConversationSessionRepository;
 import com.kazuto.talkon.conversation.ConversationStatus;
@@ -22,9 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DashboardService {
   private final ConversationSessionRepository sessions;
+  private final ConversationMessageRepository messages;
 
-  public DashboardService(ConversationSessionRepository sessions) {
+  public DashboardService(
+      ConversationSessionRepository sessions, ConversationMessageRepository messages) {
     this.sessions = sessions;
+    this.messages = messages;
   }
 
   @Transactional(readOnly = true)
@@ -44,7 +48,8 @@ public class DashboardService {
       LocalDate date = session.getStartedAt().atZone(zone).toLocalDate();
       Instant end = session.getFinishedAt() == null ? now : session.getFinishedAt();
       long seconds = Math.max(0, Duration.between(session.getStartedAt(), end).getSeconds());
-      totals.computeIfAbsent(date, ignored -> new DayTotal()).add(seconds);
+      long messageCount = messages.countBySessionId(session.getId());
+      totals.computeIfAbsent(date, ignored -> new DayTotal()).add(seconds, messageCount);
     }
 
     var activities = new ArrayList<DashboardResponse.DailyActivity>();
@@ -56,7 +61,11 @@ public class DashboardService {
       }
       activities.add(
           new DashboardResponse.DailyActivity(
-              date, total.sessionCount, total.studySeconds, level(total.sessionCount)));
+              date,
+              total.sessionCount,
+              total.messageCount,
+              total.studySeconds,
+              level(total.sessionCount)));
     }
 
     int streak = countStreak(today, studyDays);
@@ -86,10 +95,12 @@ public class DashboardService {
 
   private static class DayTotal {
     private int sessionCount;
+    private long messageCount;
     private long studySeconds;
 
-    void add(long seconds) {
+    void add(long seconds, long messages) {
       sessionCount++;
+      messageCount += messages;
       studySeconds += seconds;
     }
   }

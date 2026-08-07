@@ -11,5 +11,7 @@ public interface ConversationMessageRepository extends JpaRepository<Conversatio
 
   long countBySessionIdAndRole(Long sessionId, MessageRole role);
 
+  long countBySessionId(Long sessionId);
+
   Optional<ConversationMessage> findByIdAndSessionId(Long id, Long sessionId);
 }

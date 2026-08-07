@@ -12,5 +12,6 @@ public record DashboardResponse(
     Long activeConversationId,
     List<DailyActivity> activities) {
 
-  public record DailyActivity(LocalDate date, int sessionCount, long studySeconds, int level) {}
+  public record DailyActivity(
+      LocalDate date, int sessionCount, long messageCount, long studySeconds, int level) {}
 }

@@ -13,6 +13,7 @@ test("登録からフィードバック確認まで", async ({ page }) => {
   await page.getByLabel("メールアドレス").fill(email);
   await page.getByLabel("パスワード").fill("password123");
   await page.getByRole("button", { name: "ログイン" }).click();
+  await page.getByRole("button", { name: /初心者/ }).click();
   await page.getByRole("button", { name: "会話を始める" }).first().click();
   await page.getByLabel("メッセージ").fill("I went hiking this weekend.");
   await page.getByRole("button", { name: "送信" }).click();

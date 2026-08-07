@@ -279,3 +279,93 @@ POST /api/conversations/{conversationId}/messages/{messageId}/translation
 - ログはアプリケーションログへ出力し、外部のログ収集基盤は追加していません。
 
 これらは実利用で問題として観測された時点で、記録されたログと利用状況をもとに次の改善対象とします。
+
+---
+
+# Phase 1.5 追加修正
+
+## 10. Phase 1.5で解決する問題
+
+Phase 1.5では、基本機能を増やすのではなく、毎日10〜20分利用できる会話品質・学習品質・UX品質を目標にしました。
+
+- AIが教師のように訂正したり、毎回答質問したりする
+- ユーザーの英語レベルに難易度を合わせられない
+- Fake LLMの翻訳が日本語訳として使えない
+- Feedbackに同一文の無意味なCorrectionが含まれる
+- Feedbackが教材として読みづらい
+- 会話領域が広く視線移動が大きい
+- Dashboardの草から具体的な学習量が分からない
+
+PR #4で追加した非同期Feedback、再試行、Translation API、ログ、Error Boundaryは維持しています。
+
+## 11. Phase 1.5の設計判断
+
+### Conversation AI
+
+AIの役割を「英語教師」ではなく「フレンドリーな英語話者の友達」としました。共通Conversation PolicyとEnglishLevel別Policyを分け、レベルごとの別実装は作っていません。
+
+毎回答質問しない、ユーザー文を機械的に繰り返さない、多少の誤りから意味を推測する、文法修正はFeedbackへ任せる、という責務をSystem Promptへ明記しました。直近20メッセージを渡す既存方針は維持しています。
+
+### EnglishLevel
+
+`BEGINNER`、`INTERMEDIATE`、`ADVANCED` をUserへ保存します。登録項目へ混ぜず、初回ログイン後のオンボーディングで選択します。未選択ユーザーは会話開始できず、選択画面へ誘導されます。
+
+### Translation
+
+翻訳はAIメッセージ単位で必要な時だけ取得します。保存済み翻訳を再利用し、画面では「日本語訳を見る」「日本語訳を閉じる」で開閉できます。Fake LLMも会話で生成する定型応答に対応した自然な日本語を返します。
+
+### Feedback
+
+Feedback AIだけが文法・自然さを評価します。Correctionは `original`、`corrected`、`reasonJa`、`alternative`、`category` を持ちます。DTO生成時にも `original == corrected` を除外し、Promptだけに品質保証を依存させません。明確な誤りがない場合はCorrectionを空にできます。
+
+### DashboardとUI
+
+日別活動へConversation数だけでなくMessage数を追加しました。草はマウスhoverとキーボードfocusの両方で、日付・Conversation数・Message数を表示します。会話本文は760pxへ制限し、入力欄をstickyのまま維持しました。色、角丸、影、余白はCSS変数で共通化を始めています。
+
+### 認証後のCSRF更新
+
+Spring Securityはログイン時にセッションを更新するため、ログイン前に取得したCSRFトークンを使い続けると、直後のレベル保存が失敗します。`frontend/src/shared/api.ts` では登録・ログイン・ログアウトの完了時にトークンキャッシュを破棄し、次の更新通信で新しいトークンを取得する構成にしました。
+
+## 12. Phase 1.5 作業ファイル
+
+| 種別       | ファイル                                                                                    | 内容                                                    |
+| ---------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 新規       | `backend/src/main/java/com/kazuto/talkon/user/EnglishLevel.java`                            | 3段階の英会話レベル                                     |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/user/User.java`                                    | EnglishLevelの保持と更新                                |
+| 新規       | `backend/src/main/java/com/kazuto/talkon/user/UserProfileController.java`                   | レベル保存API                                           |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/auth/AuthController.java`                          | Userレスポンスへレベル追加                              |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/conversation/ConversationService.java`             | レベル取得とAIへの引き渡し                              |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/llm/ConversationAiClient.java`                     | レベル付き会話生成契約                                  |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/llm/Prompts.java`                                  | 友達型Conversation Policy、Level Policy、Feedback規則   |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java`                           | OpenAI/Fakeのレベル別会話、自然なFake翻訳、教材Feedback |
+| 新規       | `backend/src/main/java/com/kazuto/talkon/feedback/FeedbackCategory.java`                    | 修正カテゴリ                                            |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/feedback/FeedbackData.java`                        | 新Correction構造と同一文除外                            |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/feedback/ConversationFeedback.java`                | vocabularyTips保存                                      |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/conversation/ConversationDtos.java`                | 新Feedback API形式                                      |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardService.java`                   | 日別Message数集計                                       |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardResponse.java`                  | messageCount追加                                        |
+| 変更       | `backend/src/main/java/com/kazuto/talkon/conversation/ConversationMessageRepository.java`   | Message数取得                                           |
+| 新規       | `backend/src/main/resources/db/migration/V3__add_english_level_and_feedback_vocabulary.sql` | UserレベルとvocabularyTips列                            |
+| 変更       | `frontend/src/shared/api.ts`                                                                | Level、Feedback、Dashboardの型とAPI、認証後のCSRF更新   |
+| 新規       | `frontend/src/features/onboarding/EnglishLevelPage.tsx`                                     | 初回レベル選択UI                                        |
+| 変更       | `frontend/src/App.tsx`                                                                      | オンボーディング制御と会話幅コンテナ                    |
+| 変更       | `frontend/src/features/conversation/MessageList.tsx`                                        | 翻訳の取得・開閉                                        |
+| 変更       | `frontend/src/features/conversation/FeedbackPanel.tsx`                                      | 教材型Correction UI                                     |
+| 変更       | `frontend/src/features/dashboard/ActivityGrid.tsx`                                          | hover/focus Tooltip                                     |
+| 変更       | `frontend/src/styles.css`                                                                   | デザイン変数、会話幅、教材、Tooltip、Responsive UI      |
+| 変更       | `frontend/e2e/happy-path.spec.ts`                                                           | オンボーディングを含む正常系                            |
+| 変更・新規 | `backend/src/test`、`frontend/src/features/**/*.test.tsx`                                   | Level、Feedback、翻訳、Tooltipのテスト                  |
+| 変更       | `docs/MVP修正.md`                                                                           | Phase 1.5の判断と実装記録                               |
+| 新規       | `docs/CODE_READING_GUIDE.md`                                                                | コードを追うための参考書                                |
+
+## 13. DB・API変更
+
+Flyway V3で `users.english_level` と `conversation_feedbacks.vocabulary_tips` を追加しました。既存V1/V2は変更していません。
+
+追加APIは `PUT /api/users/me/english-level` です。`GET /api/auth/me` を含むUserレスポンスには `englishLevel` が加わります。Dashboardの日別活動には `messageCount` が加わり、Feedbackから旧 `improvements` を外して `corrections` と `vocabularyTips` に整理しました。
+
+## 14. 今回採用しなかったもの
+
+Kafka、Redis、WebFlux、Microservices、音声、CEFR、自動レベル判定、ランキング、決済は導入していません。レベル変更専用設定画面、高度な重複検知、全英文に対応するローカル翻訳エンジンも対象外です。
+
+Fake翻訳はローカルで今回の会話UXを検証できる範囲の決定的実装です。任意英文を高品質に翻訳する場合はOpenAI互換APIを利用します。

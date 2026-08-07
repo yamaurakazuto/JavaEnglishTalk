@@ -14,6 +14,7 @@ import {
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { FeedbackPanel } from "./features/conversation/FeedbackPanel";
 import { MessageList } from "./features/conversation/MessageList";
+import { EnglishLevelPage } from "./features/onboarding/EnglishLevelPage";
 import { api, ApiError, Conversation, HistoryPage, User } from "./shared/api";
 
 function ErrorBox({ error }: { error: string }) {
@@ -235,56 +236,58 @@ function ConversationPage({
   }
   return (
     <Shell user={user} onLogout={onLogout}>
-      <div className="conversation-head">
-        <div>
-          <p className="eyebrow">FREE CONVERSATION</p>
-          <h1>
-            {c?.status === "ENDED" ? "会話を振り返る" : "英会話セッション"}
-          </h1>
+      <div className="conversation-layout">
+        <div className="conversation-head">
+          <div>
+            <p className="eyebrow">FREE CONVERSATION</p>
+            <h1>
+              {c?.status === "ENDED" ? "会話を振り返る" : "英会話セッション"}
+            </h1>
+          </div>
+          {c?.status === "ACTIVE" && (
+            <button className="secondary" onClick={finish} disabled={busy}>
+              会話を終了
+            </button>
+          )}
         </div>
+        {loadState === "LOADING" && (
+          <p aria-live="polite">会話を読み込んでいます…</p>
+        )}
+        {loadState === "ERROR" && !c && (
+          <p>
+            会話を表示できません。ダッシュボードへ戻って、もう一度お試しください。
+          </p>
+        )}
+        {c && (
+          <MessageList
+            conversation={c}
+            onMessageUpdated={updateMessage}
+            onError={setError}
+          />
+        )}
+        <ErrorBox error={error} />
         {c?.status === "ACTIVE" && (
-          <button className="secondary" onClick={finish} disabled={busy}>
-            会話を終了
-          </button>
+          <form className="composer" onSubmit={send}>
+            <textarea
+              aria-label="メッセージ"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              maxLength={2000}
+              placeholder="Type your message in English…"
+            />
+            <button disabled={busy || !text.trim()}>
+              {busy ? "送信中…" : "送信"}
+            </button>
+          </form>
+        )}
+        {c?.status === "ENDED" && (
+          <FeedbackPanel
+            conversation={c}
+            retrying={busy}
+            onRetry={retryFeedback}
+          />
         )}
       </div>
-      {loadState === "LOADING" && (
-        <p aria-live="polite">会話を読み込んでいます…</p>
-      )}
-      {loadState === "ERROR" && !c && (
-        <p>
-          会話を表示できません。ダッシュボードへ戻って、もう一度お試しください。
-        </p>
-      )}
-      {c && (
-        <MessageList
-          conversation={c}
-          onMessageUpdated={updateMessage}
-          onError={setError}
-        />
-      )}
-      <ErrorBox error={error} />
-      {c?.status === "ACTIVE" && (
-        <form className="composer" onSubmit={send}>
-          <textarea
-            aria-label="メッセージ"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={2000}
-            placeholder="Type your message in English…"
-          />
-          <button disabled={busy || !text.trim()}>
-            {busy ? "送信中…" : "送信"}
-          </button>
-        </form>
-      )}
-      {c?.status === "ENDED" && (
-        <FeedbackPanel
-          conversation={c}
-          retrying={busy}
-          onRetry={retryFeedback}
-        />
-      )}
     </Shell>
   );
 }
@@ -329,6 +332,17 @@ export default function App() {
   }, []);
   if (user === undefined) {
     return <main className="loading">TalkOn</main>;
+  }
+  if (user && !user.englishLevel) {
+    return (
+      <Routes>
+        <Route
+          path="/onboarding"
+          element={<EnglishLevelPage onSelected={setUser} />}
+        />
+        <Route path="*" element={<Navigate to="/onboarding" />} />
+      </Routes>
+    );
   }
   async function logout() {
     await api.logout();

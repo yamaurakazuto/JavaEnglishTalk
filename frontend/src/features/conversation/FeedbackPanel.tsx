@@ -52,22 +52,45 @@ export function FeedbackPanel({
         ))}
       </ul>
       <h3>改善ポイント</h3>
-      {feedback.improvements.map((item, index) => (
-        <article key={index}>
-          <del>{item.original}</del>
-          <strong>{item.suggestion}</strong>
-          <p>{item.reason}</p>
+      {feedback.corrections.length === 0 && (
+        <p>明確に直す必要のある表現はありませんでした。</p>
+      )}
+      {feedback.corrections.map((item) => (
+        <article
+          className="correction-card"
+          key={`${item.original}-${item.corrected}`}
+        >
+          <span className="category-label">{categoryName(item.category)}</span>
+          <p className="original-expression">✕ {item.original}</p>
+          <span className="correction-arrow">↓</span>
+          <strong className="corrected-expression">✓ {item.corrected}</strong>
+          <h4>💡 なぜ？</h4>
+          <p>{item.reasonJa}</p>
+          <small>別の表現</small>
+          <p className="alternative-expression">{item.alternative}</p>
         </article>
       ))}
-      <h3>代表的な修正</h3>
-      {feedback.corrections.map((item, index) => (
-        <article key={index}>
-          <del>{item.original}</del>
-          <strong>{item.corrected}</strong>
-          <p>{item.explanation}</p>
-        </article>
-      ))}
+      {feedback.vocabularyTips.length > 0 && (
+        <>
+          <h3>覚えておきたいポイント</h3>
+          <ul>
+            {feedback.vocabularyTips.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </>
+      )}
       <blockquote>{feedback.overallComment}</blockquote>
     </section>
   );
+}
+
+function categoryName(category: string) {
+  const names: Record<string, string> = {
+    GRAMMAR: "文法",
+    VOCABULARY: "語彙",
+    NATURALNESS: "自然な表現",
+    WORD_ORDER: "語順",
+  };
+  return names[category] ?? category;
 }

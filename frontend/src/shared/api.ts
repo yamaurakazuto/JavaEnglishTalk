@@ -2,7 +2,13 @@
  * 認証Cookie・CSRF・共通エラーを扱うAPIクライアントです。画面ごとの通信処理の重複を避けるために集約しています。
  */
 
-export type User = { id: number; displayName: string; email: string };
+export type EnglishLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+export type User = {
+  id: number;
+  displayName: string;
+  email: string;
+  englishLevel: EnglishLevel | null;
+};
 export type Message = {
   id: number;
   role: "USER" | "ASSISTANT";
@@ -15,8 +21,14 @@ export type Feedback = {
   status: "GENERATING" | "COMPLETED" | "FAILED";
   summary: string | null;
   strengths: string[];
-  improvements: { original: string; reason: string; suggestion: string }[];
-  corrections: { original: string; corrected: string; explanation: string }[];
+  corrections: {
+    original: string;
+    corrected: string;
+    reasonJa: string;
+    alternative: string;
+    category: "GRAMMAR" | "VOCABULARY" | "NATURALNESS" | "WORD_ORDER";
+  }[];
+  vocabularyTips: string[];
   overallComment: string | null;
   errorMessage: string | null;
 };
@@ -41,6 +53,7 @@ export type DailyActivity = {
   sessionCount: number;
   studySeconds: number;
   level: number;
+  messageCount: number;
 };
 
 export type DashboardData = {
@@ -59,8 +72,10 @@ export class ApiError extends Error {
     super(message);
   }
 }
+
 const base = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 let csrf: string | undefined;
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = init.method ?? "GET";
   const headers = new Headers(init.headers);
@@ -101,17 +116,37 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const api = {
   me: () => request<User>("/api/auth/me"),
   dashboard: () => request<DashboardData>("/api/dashboard"),
-  register: (x: { displayName: string; email: string; password: string }) =>
-    request<User>("/api/auth/register", {
+  register: async (x: {
+    displayName: string;
+    email: string;
+    password: string;
+  }) => {
+    const user = await request<User>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify(x),
-    }),
-  login: (x: { email: string; password: string }) =>
-    request<User>("/api/auth/login", {
+    });
+    csrf = undefined;
+
+    return user;
+  },
+  login: async (x: { email: string; password: string }) => {
+    const user = await request<User>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(x),
+    });
+    csrf = undefined;
+
+    return user;
+  },
+  logout: async () => {
+    await request<void>("/api/auth/logout", { method: "POST" });
+    csrf = undefined;
+  },
+  selectEnglishLevel: (englishLevel: EnglishLevel) =>
+    request<User>("/api/users/me/english-level", {
+      method: "PUT",
+      body: JSON.stringify({ englishLevel }),
     }),
-  logout: () => request<void>("/api/auth/logout", { method: "POST" }),
   start: () => request<Conversation>("/api/conversations", { method: "POST" }),
   active: () => request<Conversation | undefined>("/api/conversations/active"),
   detail: (id: string | number) =>

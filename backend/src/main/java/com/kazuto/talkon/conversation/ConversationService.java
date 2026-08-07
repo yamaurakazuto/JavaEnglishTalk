@@ -9,6 +9,7 @@ import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
 import com.kazuto.talkon.feedback.FeedbackGenerationService;
 import com.kazuto.talkon.feedback.FeedbackStatus;
 import com.kazuto.talkon.llm.ConversationAiClient;
+import com.kazuto.talkon.user.EnglishLevel;
 import com.kazuto.talkon.user.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
@@ -61,7 +62,7 @@ public class ConversationService {
     }
     final String greeting;
     try {
-      greeting = ai.greeting();
+      greeting = ai.greeting(level(userId));
     } catch (Exception e) {
       throw llm();
     }
@@ -128,7 +129,7 @@ public class ConversationService {
         });
     String reply;
     try {
-      reply = ai.reply(messages.findBySessionIdOrderBySequenceNo(id));
+      reply = ai.reply(messages.findBySessionIdOrderBySequenceNo(id), level(userId));
     } catch (Exception e) {
       throw llm();
     }
@@ -252,6 +253,14 @@ public class ConversationService {
   private static ApiException llm() {
     return new ApiException(
         HttpStatus.SERVICE_UNAVAILABLE, "LLM_UNAVAILABLE", "AIサービスを利用できません。しばらくしてから再試行してください。");
+  }
+
+  private EnglishLevel level(Long userId) {
+    var level = users.findById(userId).orElseThrow().getEnglishLevel();
+    if (level == null) {
+      throw new ApiException(HttpStatus.CONFLICT, "ENGLISH_LEVEL_REQUIRED", "英会話レベルを選択してください。");
+    }
+    return level;
   }
 
   private void runAfterCommit(Runnable action) {

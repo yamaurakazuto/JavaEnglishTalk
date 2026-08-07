@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -78,5 +79,31 @@ class AuthIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"email\":\"login@example.com\",\"password\":\"wrong-password\"}"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void englishLevelIsSavedAndReturnedForCurrentUser() throws Exception {
+    users.save(new User("Level User", "level@example.com", encoder.encode("password123")));
+    var login =
+        mvc.perform(
+                post("/api/auth/login")
+                    .with(csrf())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"email\":\"level@example.com\",\"password\":\"password123\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+    var session = (MockHttpSession) login.getRequest().getSession(false);
+
+    mvc.perform(
+            put("/api/users/me/english-level")
+                .session(session)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"englishLevel\":\"ADVANCED\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.englishLevel").value("ADVANCED"));
+    mvc.perform(get("/api/auth/me").session(session))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.englishLevel").value("ADVANCED"));
   }
 }

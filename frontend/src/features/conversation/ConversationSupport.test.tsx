@@ -27,8 +27,8 @@ const conversation: Conversation = {
     status: "GENERATING",
     summary: null,
     strengths: [],
-    improvements: [],
     corrections: [],
+    vocabularyTips: [],
     overallComment: null,
     errorMessage: null,
   },
@@ -51,10 +51,44 @@ test("必要なときだけAIメッセージを翻訳する", async () => {
       onError={vi.fn()}
     />,
   );
-  await userEvent.click(screen.getByRole("button", { name: "日本語訳を見る" }));
+  await userEvent.click(screen.getByRole("button", { name: /日本語訳を見る/ }));
 
   expect(api.translate).toHaveBeenCalledWith(1, 10);
   expect(onMessageUpdated).toHaveBeenCalledWith(translated);
+});
+
+test("教材形式で修正文、日本語理由、別表現を表示する", () => {
+  render(
+    <FeedbackPanel
+      conversation={{
+        ...conversation,
+        feedback: {
+          status: "COMPLETED",
+          summary: "会話できました。",
+          strengths: ["気持ちを伝えられました。"],
+          corrections: [
+            {
+              original: "Today is tired.",
+              corrected: "I'm tired today.",
+              reasonJa: "tired は人の状態を表します。",
+              alternative: "I feel tired today.",
+              category: "GRAMMAR",
+            },
+          ],
+          vocabularyTips: ["tired は疲れたという意味です。"],
+          overallComment: "よくできました。",
+          errorMessage: null,
+        },
+      }}
+      retrying={false}
+      onRetry={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText("✕ Today is tired.")).toBeInTheDocument();
+  expect(screen.getByText("✓ I'm tired today.")).toBeInTheDocument();
+  expect(screen.getByText("tired は人の状態を表します。")).toBeInTheDocument();
+  expect(screen.getByText("I feel tired today.")).toBeInTheDocument();
 });
 
 test("フィードバック生成中と失敗を白画面にせず表示する", () => {
