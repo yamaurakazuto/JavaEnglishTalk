@@ -58,21 +58,36 @@ public class AiClientConfig {
 
     public String reply(List<ConversationMessage> m, EnglishLevel level) {
       long turn = m.stream().filter(x -> x.getRole() == MessageRole.USER).count();
-      var questions =
-          List.of(
-              "How did that make you feel?",
-              "What happened next?",
-              "Would you like to do that again?");
+      String latest =
+          m.stream()
+              .filter(x -> x.getRole() == MessageRole.USER)
+              .reduce((first, second) -> second)
+              .map(ConversationMessage::getContent)
+              .orElse("")
+              .toLowerCase();
+      if (latest.contains("tired") || latest.contains("busy")) {
+        return level == EnglishLevel.BEGINNER
+            ? "That sounds tiring. I hope you can relax soon. What helps you rest?"
+            : "That sounds exhausting. I hope you get a chance to unwind—what usually helps you recharge?";
+      }
+      if (latest.contains("hiking") || latest.contains("mountain") || latest.contains("walk")) {
+        return level == EnglishLevel.BEGINNER
+            ? "That sounds fun! I like being outside too. Where do you usually go?"
+            : "That sounds like a great way to spend the day. Do you have a favorite trail or place to walk?";
+      }
+      if (latest.contains("food") || latest.contains("cook") || latest.contains("restaurant")) {
+        return level == EnglishLevel.BEGINNER
+            ? "Nice! Food is always fun to talk about. What dish do you like best?"
+            : "Now you're making me hungry! What's a dish you could happily eat again and again?";
+      }
       if (turn % 3 == 0) {
         return level == EnglishLevel.BEGINNER
-            ? "Oh, I understand. That sounds nice!"
-            : "I get what you mean. That sounds like quite a day!";
+            ? "I see. Thanks for telling me!"
+            : "I get what you mean. Thanks for sharing that with me.";
       }
-      String reaction =
-          level == EnglishLevel.ADVANCED
-              ? "I can relate to that—it sounds memorable. "
-              : "Oh, I see! That sounds interesting. ";
-      return reaction + questions.get((int) ((turn - 1) % questions.size()));
+      return level == EnglishLevel.ADVANCED
+          ? "That's an interesting point. What stands out to you most about it?"
+          : "Oh, I see! What do you like most about it?";
     }
 
     public String translate(String englishText) {
@@ -98,28 +113,52 @@ public class AiClientConfig {
     }
 
     public FeedbackData feedback(List<ConversationMessage> m) {
-      var text =
+      var userMessages =
           m.stream()
               .filter(x -> x.getRole() == MessageRole.USER)
-              .findFirst()
               .map(ConversationMessage::getContent)
-              .orElse("Your message");
-      var corrections =
-          text.equalsIgnoreCase("Today is tired.")
-              ? List.of(
-                  new FeedbackData.Correction(
-                      text,
-                      "I'm tired today.",
-                      "tired は人の状態を表すため、I を主語にします。",
-                      "I feel tired today.",
-                      FeedbackCategory.GRAMMAR))
-              : List.<FeedbackData.Correction>of();
+              .toList();
+      var corrections = new ArrayList<FeedbackData.Correction>();
+      userMessages.forEach(text -> addLocalCorrections(text, corrections));
+      var topic = userMessages.isEmpty() ? "身近な話題" : "「" + userMessages.getLast() + "」という話題";
       return new FeedbackData(
-          "日常の話題について英語で会話を続けられました。",
-          List.of("自分の考えを英語で伝え、会話を前へ進められました。"),
-          corrections,
-          List.of("会話では短い文でも、具体的な情報を一つ加えると自然に広がります。"),
-          "よくできました。間違いを恐れず、これからも会話を楽しみましょう。");
+          topic + "について、" + userMessages.size() + "回の発言で会話を進めました。",
+          List.of("質問に答えるだけでなく、自分の情報を英語で伝えられました。"),
+          corrections.stream().limit(5).toList(),
+          List.of("理由や具体例を一つ加えると、相手が次の話題を広げやすくなります。"),
+          corrections.isEmpty()
+              ? "意味は自然に伝わっています。次は具体例を添えて、会話をもう一段広げてみましょう。"
+              : "伝えたい内容は理解できます。今回の修正を一つ選び、次の会話で使ってみましょう。");
+    }
+
+    private static void addLocalCorrections(
+        String text, List<FeedbackData.Correction> corrections) {
+      String normalized = text.trim().toLowerCase();
+      if (normalized.contains("today is tired")) {
+        corrections.add(
+            new FeedbackData.Correction(
+                text,
+                "I'm tired today.",
+                "tired は人の状態を表すため、I を主語にします。",
+                "I feel tired today.",
+                FeedbackCategory.GRAMMAR));
+      } else if (normalized.contains("i am agree")) {
+        corrections.add(
+            new FeedbackData.Correction(
+                text,
+                text.replaceAll("(?i)I am agree", "I agree"),
+                "agree は動詞なので、be動詞の am は付けません。",
+                "I feel the same way.",
+                FeedbackCategory.GRAMMAR));
+      } else if (normalized.contains("i very like")) {
+        corrections.add(
+            new FeedbackData.Correction(
+                text,
+                text.replaceAll("(?i)I very like", "I really like"),
+                "動詞 like を強めるときは very ではなく really を使うと自然です。",
+                "I'm a big fan of it.",
+                FeedbackCategory.NATURALNESS));
+      }
     }
   }
 
