@@ -85,7 +85,7 @@ class ConversationIntegrationTest {
         .andExpect(jsonPath("$.messages[2].role").value("ASSISTANT"))
         .andExpect(
             jsonPath("$.messages[2].content")
-                .value(org.hamcrest.Matchers.containsString("Oh, I see")));
+                .value(org.hamcrest.Matchers.containsString("Where do you usually go?")));
     mvc.perform(get("/api/conversations/" + id).with(auth(other))).andExpect(status().isNotFound());
     mvc.perform(post("/api/conversations/" + id + "/finish").with(auth(owner)).with(csrf()))
         .andExpect(status().isAccepted())

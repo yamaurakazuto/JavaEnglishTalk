@@ -298,7 +298,19 @@ function ConversationPage({
                 {busy ? "送信中…" : "送信"}
               </button>
             </form>
-            <p className="composer-hint">Enter で送信 / Shift + Enter で改行</p>
+            <div className="conversation-bottom-actions">
+              <p className="composer-hint">
+                Enter で送信 / Shift + Enter で改行
+              </p>
+              <button
+                type="button"
+                className="link finish-conversation-bottom"
+                onClick={finish}
+                disabled={busy}
+              >
+                会話を終了
+              </button>
+            </div>
           </>
         )}
         {c?.status === "ENDED" && (
