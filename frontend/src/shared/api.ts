@@ -40,6 +40,20 @@ export type Conversation = {
   messages: Message[];
   feedback: Feedback | null;
 };
+
+export type VoiceTurn = {
+  userTranscript: string;
+  conversation: Conversation;
+  assistantAudioBase64: string | null;
+  audioContentType: string | null;
+  processingTimes: {
+    sttMs: number;
+    llmMs: number;
+    ttsMs: number;
+    totalMs: number;
+  };
+  warning: string | null;
+};
 export type HistoryPage = {
   content: Pick<Conversation, "id" | "status" | "startedAt" | "finishedAt">[];
   page: number;
@@ -87,7 +101,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     }
     headers.set("X-XSRF-TOKEN", csrf!);
   }
-  if (init.body) {
+  if (init.body && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
   const response = await fetch(`${base}${path}`, {
@@ -113,6 +127,28 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return body as T;
 }
+
+async function requestAudio(path: string): Promise<Blob> {
+  if (!csrf) {
+    const response = await fetch(`${base}/api/csrf`, {
+      credentials: "include",
+    });
+    csrf = (await response.json()).token;
+  }
+  const response = await fetch(`${base}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "X-XSRF-TOKEN": csrf! },
+  });
+  if (!response.ok) {
+    const body = await response
+      .json()
+      .catch(() => ({ message: "音声を生成できませんでした。" }));
+    throw new ApiError(response.status, body.message);
+  }
+  return response.blob();
+}
+
 export const api = {
   me: () => request<User>("/api/auth/me"),
   dashboard: () => request<DashboardData>("/api/dashboard"),
@@ -156,6 +192,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ content }),
     }),
+  sendVoice: (id: number, audio: Blob) => {
+    const body = new FormData();
+    body.append(
+      "audio",
+      audio,
+      `recording.${audio.type.includes("webm") ? "webm" : "mp4"}`,
+    );
+    return request<VoiceTurn>(`/api/conversations/${id}/voice-turns`, {
+      method: "POST",
+      body,
+    });
+  },
+  speech: (conversationId: number, messageId: number) =>
+    requestAudio(
+      `/api/conversations/${conversationId}/messages/${messageId}/speech`,
+    ),
   finish: (id: number) =>
     request<Conversation>(`/api/conversations/${id}/finish`, {
       method: "POST",

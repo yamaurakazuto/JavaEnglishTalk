@@ -2,6 +2,21 @@
 
 # TalkOn コード追跡ガイド
 
+## Phase 2 音声会話を追う
+
+音声会話は次の順で読む。
+
+1. `frontend/src/features/conversation/VoiceRecorder.tsx` が録音開始・停止とUI状態を管理する。
+2. `frontend/src/shared/api.ts` の `sendVoice` がBlobをmultipartへ変換する。
+3. `VoiceConversationController` が認証ユーザーと音声を受け取る。
+4. `VoiceConversationService` が入力検証とSTT → LLM → TTSを調整する。
+5. `SpeechRecognitionService` と `TextToSpeechService` が外部APIとの境界になる。
+6. `SpeechClientConfig.OpenAiSpeechClient` だけがOpenAIのURLとrequest形式を知る。
+7. LLMは既存 `ConversationService.send` を通り、音声文字起こしも通常メッセージと同じ順で保存される。
+8. TTS失敗時は `VoiceTurnResult.warning` を返し、ReactはAI英文を残す。
+
+音声再生だけを追う場合は、`MessageList.tsx` の `playSpeech` から `api.speech`、`VoiceConversationController.speech`、`VoiceConversationService.synthesizeMessage` の順に読む。会話所有者とASSISTANTロールを確認してからTTSを呼ぶ。
+
 ## 1. このガイドの使い方
 
 この文書は、コードを最初から全行読むためのものではない。「ユーザー操作から保存結果まで」「不具合の表示から原因まで」「変更箇所から必要テストまで」を、境界ごとに追うための地図である。

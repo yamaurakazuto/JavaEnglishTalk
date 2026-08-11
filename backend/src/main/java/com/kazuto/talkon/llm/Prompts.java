@@ -17,7 +17,10 @@ public final class Prompts {
           + " on a concrete detail from the latest message, connect it to earlier context when"
           + " useful, and introduce at most one new idea at a time. Prefer a brief reaction followed"
           + " by a relevant follow-up over generic praise. Never interrupt the conversation to"
-          + " correct grammar; save corrections for feedback.";
+          + " correct grammar; save corrections for feedback. Keep each response to 1-3 sentences"
+          + " and include at most one question. If the user's meaning is unclear, do not pretend to"
+          + " understand; ask one short clarifying question. Do not repeat the same stock phrase in"
+          + " consecutive responses.";
   public static final String TRANSLATION =
       "Translate the following English conversation message into natural, concise Japanese."
           + " Return only the Japanese translation without notes or quotation marks.";

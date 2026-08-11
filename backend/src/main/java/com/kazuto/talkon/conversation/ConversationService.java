@@ -8,7 +8,6 @@ import com.kazuto.talkon.feedback.ConversationFeedback;
 import com.kazuto.talkon.feedback.ConversationFeedbackRepository;
 import com.kazuto.talkon.feedback.FeedbackGenerationService;
 import com.kazuto.talkon.feedback.FeedbackStatus;
-import com.kazuto.talkon.llm.ConversationAiClient;
 import com.kazuto.talkon.user.EnglishLevel;
 import com.kazuto.talkon.user.UserRepository;
 import java.time.Duration;
@@ -30,7 +29,8 @@ public class ConversationService {
   private final ConversationMessageRepository messages;
   private final ConversationFeedbackRepository feedbacks;
   private final UserRepository users;
-  private final ConversationAiClient ai;
+  private final ConversationAIService ai;
+  private final TranslationService translations;
   private final ObjectMapper mapper;
   private final FeedbackGenerationService feedbackGenerator;
   private final TransactionTemplate tx;
@@ -40,7 +40,8 @@ public class ConversationService {
       ConversationMessageRepository m,
       ConversationFeedbackRepository f,
       UserRepository u,
-      ConversationAiClient a,
+      ConversationAIService a,
+      TranslationService translations,
       ObjectMapper mapper,
       FeedbackGenerationService feedbackGenerator,
       TransactionTemplate tx) {
@@ -49,6 +50,7 @@ public class ConversationService {
     feedbacks = f;
     users = u;
     ai = a;
+    this.translations = translations;
     this.mapper = mapper;
     this.feedbackGenerator = feedbackGenerator;
     this.tx = tx;
@@ -203,7 +205,7 @@ public class ConversationService {
     if (message.getTranslation() == null) {
       String translated;
       try {
-        translated = ai.translate(message.getContent());
+        translated = translations.translate(message.getContent());
       } catch (Exception exception) {
         throw llm();
       }

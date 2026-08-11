@@ -2,17 +2,12 @@
 
 package com.kazuto.talkon.llm;
 
+import com.kazuto.talkon.conversation.ConversationAIService;
 import com.kazuto.talkon.conversation.ConversationMessage;
+import com.kazuto.talkon.conversation.TranslationService;
 import com.kazuto.talkon.feedback.FeedbackData;
-import com.kazuto.talkon.user.EnglishLevel;
 import java.util.List;
 
-public interface ConversationAiClient {
-  String greeting(EnglishLevel level);
-
-  String reply(List<ConversationMessage> messages, EnglishLevel level);
-
-  String translate(String englishText);
-
+public interface ConversationAiClient extends ConversationAIService, TranslationService {
   FeedbackData feedback(List<ConversationMessage> messages);
 }
