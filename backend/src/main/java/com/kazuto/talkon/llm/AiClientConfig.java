@@ -31,7 +31,8 @@ public class AiClientConfig {
       @Value("${app.llm.api-key:}") String key,
       @Value("${app.llm.base-url}") String url,
       @Value("${app.llm.model}") String model,
-      @Value("${app.llm.timeout-seconds:30}") int timeout) {
+      @Value("${app.llm.timeout-seconds:30}") int timeout,
+      @Value("${app.llm.history-limit:20}") int historyLimit) {
     var requestFactory = new SimpleClientHttpRequestFactory();
     requestFactory.setConnectTimeout(Duration.ofSeconds(timeout));
     requestFactory.setReadTimeout(Duration.ofSeconds(timeout));
@@ -44,7 +45,8 @@ public class AiClientConfig {
                 .baseUrl(url)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + key)
                 .build(),
-            model);
+            model,
+            historyLimit);
   }
 
   static class LocalAiClient implements ConversationAiClient {
@@ -167,11 +169,13 @@ public class AiClientConfig {
     private final ObjectMapper mapper;
     private final RestClient http;
     private final String model;
+    private final int historyLimit;
 
-    OpenAiClient(ObjectMapper m, RestClient h, String model) {
+    OpenAiClient(ObjectMapper m, RestClient h, String model, int historyLimit) {
       mapper = m;
       http = h;
       this.model = model;
+      this.historyLimit = historyLimit;
     }
 
     public String greeting(EnglishLevel level) {
@@ -198,7 +202,7 @@ public class AiClientConfig {
               "content",
               Prompts.CONVERSATION + "\nLEVEL POLICY:\n" + Prompts.levelPolicy(level)));
       messages.stream()
-          .skip(Math.max(0, messages.size() - 20))
+          .skip(Math.max(0, messages.size() - historyLimit))
           .forEach(
               x ->
                   list.add(
@@ -246,13 +250,17 @@ public class AiClientConfig {
                 .retrieve()
                 .body(JsonNode.class);
         log.info(
-            "action=callAi status=COMPLETED messageCount={} durationMs={}",
+            "action=callAi status=COMPLETED model={} messageCount={} inputTokens={} outputTokens={} durationMs={}",
+            model,
             messages.size(),
+            result.path("usage").path("prompt_tokens").asInt(-1),
+            result.path("usage").path("completion_tokens").asInt(-1),
             Duration.ofNanos(System.nanoTime() - startedAt).toMillis());
         return result.path("choices").path(0).path("message").path("content").asText();
       } catch (Exception exception) {
         log.error(
-            "action=callAi status=FAILED messageCount={} durationMs={}",
+            "action=callAi status=FAILED model={} messageCount={} durationMs={}",
+            model,
             messages.size(),
             Duration.ofNanos(System.nanoTime() - startedAt).toMillis(),
             exception);

@@ -5,6 +5,7 @@ package com.kazuto.talkon;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -133,6 +135,80 @@ class ConversationIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.role").value("ASSISTANT"))
         .andExpect(jsonPath("$.translation").isNotEmpty());
+  }
+
+  @Test
+  void voiceTurnTranscribesRepliesAndReturnsPlayableAudio() throws Exception {
+    String json =
+        mvc.perform(post("/api/conversations").with(auth(owner)).with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    long conversationId = new ObjectMapper().readTree(json).path("id").asLong();
+    var audio = new MockMultipartFile("audio", "recording.webm", "audio/webm", new byte[1_024]);
+
+    String result =
+        mvc.perform(
+                multipart("/api/conversations/" + conversationId + "/voice-turns")
+                    .file(audio)
+                    .with(auth(owner))
+                    .with(csrf()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.userTranscript").value("I like practicing English with TalkOn."))
+            .andExpect(jsonPath("$.conversation.messages.length()").value(3))
+            .andExpect(jsonPath("$.assistantAudioBase64").isNotEmpty())
+            .andExpect(jsonPath("$.audioContentType").value("audio/wav"))
+            .andExpect(jsonPath("$.processingTimes.sttMs").isNumber())
+            .andExpect(jsonPath("$.processingTimes.llmMs").isNumber())
+            .andExpect(jsonPath("$.processingTimes.ttsMs").isNumber())
+            .andExpect(jsonPath("$.processingTimes.totalMs").isNumber())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    long messageId =
+        new ObjectMapper()
+            .readTree(result)
+            .path("conversation")
+            .path("messages")
+            .path(2)
+            .path("id")
+            .asLong();
+    mvc.perform(
+            post("/api/conversations/" + conversationId + "/messages/" + messageId + "/speech")
+                .with(auth(owner))
+                .with(csrf()))
+        .andExpect(status().isOk())
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                .string("Content-Type", "audio/wav"));
+  }
+
+  @Test
+  void voiceTurnRejectsShortAndUnsupportedAudio() throws Exception {
+    String json =
+        mvc.perform(post("/api/conversations").with(auth(owner)).with(csrf()))
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    long conversationId = new ObjectMapper().readTree(json).path("id").asLong();
+
+    mvc.perform(
+            multipart("/api/conversations/" + conversationId + "/voice-turns")
+                .file(new MockMultipartFile("audio", "short.webm", "audio/webm", new byte[10]))
+                .with(auth(owner))
+                .with(csrf()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("AUDIO_TOO_SHORT"));
+
+    mvc.perform(
+            multipart("/api/conversations/" + conversationId + "/voice-turns")
+                .file(new MockMultipartFile("audio", "bad.txt", "text/plain", new byte[1_024]))
+                .with(auth(owner))
+                .with(csrf()))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.code").value("UNSUPPORTED_AUDIO_TYPE"));
   }
 
   private void waitForCompletedFeedback(long id) throws Exception {

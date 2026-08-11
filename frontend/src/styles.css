@@ -62,6 +62,61 @@ textarea {
   border-radius: 6px;
 }
 
+/* 音声会話 */
+.voice-recorder {
+  margin: 18px 0 10px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.voice-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.microphone-button,
+.recording-button {
+  min-width: 180px;
+}
+.recording-button {
+  background: var(--color-danger);
+}
+.voice-player {
+  max-width: min(100%, 320px);
+  height: 40px;
+}
+.voice-hint,
+.voice-warning,
+.transcript {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+}
+.voice-hint {
+  color: var(--color-muted);
+}
+.voice-warning {
+  color: #8a5200;
+}
+.transcript {
+  padding: 10px 12px;
+  border-radius: var(--radius-control);
+  background: var(--color-primary-soft);
+}
+.speech-button {
+  margin-left: 6px;
+  padding: 0.35rem 0.65rem;
+  background: transparent;
+  color: var(--color-primary-dark);
+  box-shadow: none;
+  font-size: 0.82rem;
+}
+.speech-button:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
 /* ボタン */
 button {
   border: 0;

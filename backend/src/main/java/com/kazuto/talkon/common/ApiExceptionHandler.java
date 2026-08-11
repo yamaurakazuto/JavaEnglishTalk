@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -42,6 +43,12 @@ public class ApiExceptionHandler {
   @ExceptionHandler(DataIntegrityViolationException.class)
   ResponseEntity<ApiError> conflict() {
     return ResponseEntity.status(409).body(new ApiError("CONFLICT", "競合が発生しました。", null, null));
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  ResponseEntity<ApiError> audioTooLarge() {
+    return ResponseEntity.status(413)
+        .body(new ApiError("AUDIO_TOO_LARGE", "音声ファイルの上限サイズを超えています。", null, null));
   }
 
   @ExceptionHandler(Exception.class)

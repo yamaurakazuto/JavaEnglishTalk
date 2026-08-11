@@ -1,6 +1,10 @@
 # Spring Bootの実行環境を設定します。環境依存値をコードから分離するための設定ファイルです。
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   datasource:
     url: ${DB_URL:jdbc:h2:file:./data/talkon;MODE=MySQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE}
     username: ${DB_USER:sa}
@@ -30,3 +34,14 @@ app:
     base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
     model: ${OPENAI_MODEL:gpt-4.1-mini}
     timeout-seconds: ${LLM_TIMEOUT_SECONDS:30}
+    history-limit: ${LLM_HISTORY_LIMIT:20}
+  speech:
+    stt-model: ${OPENAI_STT_MODEL:gpt-4o-mini-transcribe}
+    tts-model: ${OPENAI_TTS_MODEL:gpt-4o-mini-tts}
+    voice: ${OPENAI_TTS_VOICE:coral}
+    speed: ${OPENAI_TTS_SPEED:1.0}
+    format: ${OPENAI_TTS_FORMAT:mp3}
+    timeout-seconds: ${SPEECH_TIMEOUT_SECONDS:30}
+    retry-count: ${SPEECH_RETRY_COUNT:1}
+    max-bytes: ${SPEECH_MAX_BYTES:5242880}
+    max-recording-seconds: ${SPEECH_MAX_RECORDING_SECONDS:60}

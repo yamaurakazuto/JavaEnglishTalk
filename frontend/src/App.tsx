@@ -14,6 +14,7 @@ import {
 import { DashboardPage } from "./features/dashboard/DashboardPage";
 import { FeedbackPanel } from "./features/conversation/FeedbackPanel";
 import { MessageList } from "./features/conversation/MessageList";
+import { VoiceRecorder } from "./features/conversation/VoiceRecorder";
 import { EnglishLevelPage } from "./features/onboarding/EnglishLevelPage";
 import { api, ApiError, Conversation, HistoryPage, User } from "./shared/api";
 
@@ -284,6 +285,12 @@ function ConversationPage({
         <ErrorBox error={error} />
         {c?.status === "ACTIVE" && (
           <>
+            <VoiceRecorder
+              conversationId={c.id}
+              disabled={busy}
+              onConversationUpdated={setC}
+              onError={setError}
+            />
             <form className="composer" onSubmit={send}>
               <textarea
                 aria-label="メッセージ"

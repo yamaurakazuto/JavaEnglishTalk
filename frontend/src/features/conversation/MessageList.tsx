@@ -17,6 +17,7 @@ export function MessageList({
   onError,
 }: MessageListProps) {
   const [translatingId, setTranslatingId] = useState<number>();
+  const [speakingId, setSpeakingId] = useState<number>();
   const [openTranslations, setOpenTranslations] = useState<number[]>([]);
 
   async function showTranslation(message: Message) {
@@ -42,6 +43,24 @@ export function MessageList({
         ? current.filter((id) => id !== messageId)
         : [...current, messageId],
     );
+  }
+
+  async function playSpeech(message: Message) {
+    setSpeakingId(message.id);
+    onError("");
+    try {
+      const audio = await api.speech(conversation.id, message.id);
+      const url = URL.createObjectURL(audio);
+      const player = new Audio(url);
+      player.addEventListener("ended", () => URL.revokeObjectURL(url), {
+        once: true,
+      });
+      await player.play();
+    } catch (error) {
+      onError((error as Error).message);
+    } finally {
+      setSpeakingId(undefined);
+    }
   }
 
   return (
@@ -71,6 +90,14 @@ export function MessageList({
                   : message.translation && openTranslations.includes(message.id)
                     ? "🌐 日本語訳を閉じる"
                     : "🌐 日本語訳を見る"}
+              </button>
+              <button
+                className="speech-button"
+                type="button"
+                disabled={speakingId === message.id}
+                onClick={() => playSpeech(message)}
+              >
+                {speakingId === message.id ? "音声を準備中…" : "🔊 英語を聞く"}
               </button>
             </>
           )}

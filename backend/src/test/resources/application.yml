@@ -1,6 +1,10 @@
 # Spring Bootの実行環境を設定します。環境依存値をコードから分離するための設定ファイルです。
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   datasource:
     url: jdbc:h2:mem:talkon;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
@@ -16,3 +20,15 @@ app:
     api-key: ""
     base-url: https://api.openai.com/v1
     model: test
+    timeout-seconds: 30
+    history-limit: 20
+  speech:
+    stt-model: test-stt
+    tts-model: test-tts
+    voice: coral
+    speed: 1.0
+    format: mp3
+    timeout-seconds: 30
+    retry-count: 1
+    max-bytes: 5242880
+    max-recording-seconds: 60
