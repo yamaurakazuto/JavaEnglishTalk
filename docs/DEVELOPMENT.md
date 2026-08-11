@@ -13,6 +13,7 @@
 ```bash
 npm install
 npm run setup
+npx --prefix frontend playwright install chromium
 npm run dev
 ```
 
@@ -45,5 +46,7 @@ cd frontend
 npm test
 npm run e2e
 ```
+
+PlaywrightのBrowserが未導入の場合、E2Eはアプリへ接続する前に失敗します。初回セットアップ時またはPlaywright更新後は、リポジトリルートで `npx --prefix frontend playwright install chromium` を実行してください。E2E実行時は別Terminalで `npm run dev` を起動しておきます。
 
 通常のテストはH2とFake LLMを利用し、外部LLM APIを呼びません。E2Eは `npm run dev` でアプリ全体を起動してから実行します。
