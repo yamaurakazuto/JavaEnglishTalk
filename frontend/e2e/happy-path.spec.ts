@@ -18,7 +18,7 @@ test("登録からフィードバック確認まで", async ({ page }) => {
   await page.getByLabel("メッセージ").fill("I went hiking this weekend.");
   await page.getByRole("button", { name: "送信" }).click();
   await expect(page.getByText(/I went hiking this weekend/)).toBeVisible();
-  await page.getByRole("button", { name: "会話を終了" }).click();
+  await page.locator(".finish-conversation-bottom").click();
   await expect(
     page.getByRole("heading", { name: "Conversation feedback" }),
   ).toBeVisible();
