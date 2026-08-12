@@ -63,10 +63,10 @@ test("会話画面の上部と入力欄の下から会話を終了できる", as
     ],
     feedback: null,
     llmUsage: {
-      inputTokens: 0,
-      outputTokens: 0,
-      estimatedCostMicros: 0,
-      model: "local-llm",
+      inputTokens: 120,
+      outputTokens: 20,
+      estimatedCostMicros: 12_800,
+      model: "gpt-4.1-mini",
     },
   };
   vi.spyOn(api, "me").mockResolvedValue({
@@ -100,6 +100,9 @@ test("会話画面の上部と入力欄の下から会話を終了できる", as
   const finishButtons = await screen.findAllByRole("button", {
     name: "会話を終了",
   });
+  expect(
+    screen.getByLabelText("現在のAI利用量 140トークン、概算0.0128円"),
+  ).toBeInTheDocument();
   expect(finishButtons).toHaveLength(2);
   await userEvent.click(finishButtons[1]);
   expect(finish).toHaveBeenCalledWith(1);

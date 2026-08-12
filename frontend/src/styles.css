@@ -631,6 +631,29 @@ main {
   align-items: center;
   gap: 16px;
 }
+.conversation-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.conversation-usage-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.conversation-usage-badge strong {
+  color: var(--color-primary-dark);
+  font-size: 0.78rem;
+}
 .conversation-head h1 {
   margin: 6px 0 0;
   font-size: 1.5rem;
@@ -1008,6 +1031,13 @@ main {
   .conversation-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+  .conversation-head-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .conversation-usage-badge {
+    align-items: flex-start;
   }
   .card {
     padding: 28px 22px;

@@ -34,6 +34,26 @@ function StatusBadge({ status }: { status: Conversation["status"] }) {
   );
 }
 
+function ConversationUsageBadge({
+  conversation,
+}: {
+  conversation: Conversation;
+}) {
+  const tokens =
+    conversation.llmUsage.inputTokens + conversation.llmUsage.outputTokens;
+  const estimatedYen = conversation.llmUsage.estimatedCostMicros / 1_000_000;
+
+  return (
+    <div
+      className="conversation-usage-badge"
+      aria-label={`現在のAI利用量 ${tokens.toLocaleString()}トークン、概算${estimatedYen.toFixed(4)}円`}
+    >
+      <span>{tokens.toLocaleString()} tokens</span>
+      <strong>約 {estimatedYen.toFixed(4)} 円</strong>
+    </div>
+  );
+}
+
 function Shell({
   children,
   user,
@@ -261,9 +281,12 @@ function ConversationPage({
             </h1>
           </div>
           {c?.status === "ACTIVE" && (
-            <button className="secondary" onClick={finish} disabled={busy}>
-              会話を終了
-            </button>
+            <div className="conversation-head-actions">
+              <ConversationUsageBadge conversation={c} />
+              <button className="secondary" onClick={finish} disabled={busy}>
+                会話を終了
+              </button>
+            </div>
           )}
           {c?.status === "ENDED" && <StatusBadge status={c.status} />}
         </div>

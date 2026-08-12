@@ -25,6 +25,7 @@
 4. `ConversationSession.addLlmUsage()` が会話単位で累積する。
 5. `ConversationDtos.Detail.llmUsage` がFrontendへ返す。
 6. `FeedbackPanel.LlmUsage` が入力、出力、合計Token、概算料金を表示する。
+7. 会話中は `App.tsx` の `ConversationUsageBadge` が同じ `llmUsage` を小さく表示する。
 
 翻訳と終了後Feedbackはこの会話料金に含めない。単価は `application.yml` の `app.llm.input-usd-per-million`、`output-usd-per-million`、`yen-per-usd` を確認する。
 
