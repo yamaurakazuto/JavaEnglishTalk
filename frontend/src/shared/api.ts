@@ -39,6 +39,12 @@ export type Conversation = {
   finishedAt: string | null;
   messages: Message[];
   feedback: Feedback | null;
+  llmUsage: {
+    inputTokens: number;
+    outputTokens: number;
+    estimatedCostMicros: number;
+    model: string | null;
+  };
 };
 
 export type VoiceTurn = {

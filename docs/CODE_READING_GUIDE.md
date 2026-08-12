@@ -17,6 +17,17 @@
 
 音声再生だけを追う場合は、`MessageList.tsx` の `playSpeech` から `api.speech`、`VoiceConversationController.speech`、`VoiceConversationService.synthesizeMessage` の順に読む。会話所有者とASSISTANTロールを確認してからTTSを呼ぶ。
 
+### Tokenと料金を追う
+
+1. `AiClientConfig.OpenAiClient.chatWithUsage()` がOpenAIレスポンスの入力・出力Tokenを読む。
+2. `ConversationAIService.AiResponse` が英文と利用量を会話Serviceへ返す。
+3. `ConversationService.recordUsage()` が `LlmCostCalculator` で概算円額を計算する。
+4. `ConversationSession.addLlmUsage()` が会話単位で累積する。
+5. `ConversationDtos.Detail.llmUsage` がFrontendへ返す。
+6. `FeedbackPanel.LlmUsage` が入力、出力、合計Token、概算料金を表示する。
+
+翻訳と終了後Feedbackはこの会話料金に含めない。単価は `application.yml` の `app.llm.input-usd-per-million`、`output-usd-per-million`、`yen-per-usd` を確認する。
+
 ## 1. このガイドの使い方
 
 この文書は、コードを最初から全行読むためのものではない。「ユーザー操作から保存結果まで」「不具合の表示から原因まで」「変更箇所から必要テストまで」を、境界ごとに追うための地図である。

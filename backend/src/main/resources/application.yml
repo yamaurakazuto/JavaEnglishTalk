@@ -35,6 +35,9 @@ app:
     model: ${OPENAI_MODEL:gpt-4.1-mini}
     timeout-seconds: ${LLM_TIMEOUT_SECONDS:30}
     history-limit: ${LLM_HISTORY_LIMIT:20}
+    input-usd-per-million: ${LLM_INPUT_USD_PER_MILLION:0.40}
+    output-usd-per-million: ${LLM_OUTPUT_USD_PER_MILLION:1.60}
+    yen-per-usd: ${LLM_YEN_PER_USD:160}
   speech:
     stt-model: ${OPENAI_STT_MODEL:gpt-4o-mini-transcribe}
     tts-model: ${OPENAI_TTS_MODEL:gpt-4o-mini-tts}

@@ -4,6 +4,7 @@ package com.kazuto.talkon.llm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kazuto.talkon.conversation.ConversationAIService.AiResponse;
 import com.kazuto.talkon.conversation.ConversationMessage;
 import com.kazuto.talkon.conversation.MessageRole;
 import com.kazuto.talkon.feedback.FeedbackCategory;
@@ -50,15 +51,18 @@ public class AiClientConfig {
   }
 
   static class LocalAiClient implements ConversationAiClient {
-    public String greeting(EnglishLevel level) {
-      return switch (level) {
-        case BEGINNER -> "Hi! It's nice to meet you. How are you today?";
-        case INTERMEDIATE -> "Hey! Nice to meet you. How's your day going?";
-        case ADVANCED -> "Hey, great to meet you! What's been the highlight of your day so far?";
-      };
+    public AiResponse greeting(EnglishLevel level) {
+      String text =
+          switch (level) {
+            case BEGINNER -> "Hi! It's nice to meet you. How are you today?";
+            case INTERMEDIATE -> "Hey! Nice to meet you. How's your day going?";
+            case ADVANCED ->
+                "Hey, great to meet you! What's been the highlight of your day so far?";
+          };
+      return new AiResponse(text, 0, 0, "local-llm");
     }
 
-    public String reply(List<ConversationMessage> m, EnglishLevel level) {
+    public AiResponse reply(List<ConversationMessage> m, EnglishLevel level) {
       long turn = m.stream().filter(x -> x.getRole() == MessageRole.USER).count();
       String latest =
           m.stream()
@@ -68,28 +72,37 @@ public class AiClientConfig {
               .orElse("")
               .toLowerCase();
       if (latest.contains("tired") || latest.contains("busy")) {
-        return level == EnglishLevel.BEGINNER
-            ? "That sounds tiring. I hope you can relax soon. What helps you rest?"
-            : "That sounds exhausting. I hope you get a chance to unwind—what usually helps you recharge?";
+        return localResponse(
+            level == EnglishLevel.BEGINNER
+                ? "That sounds tiring. I hope you can relax soon. What helps you rest?"
+                : "That sounds exhausting. I hope you get a chance to unwind—what usually helps you recharge?");
       }
       if (latest.contains("hiking") || latest.contains("mountain") || latest.contains("walk")) {
-        return level == EnglishLevel.BEGINNER
-            ? "That sounds fun! I like being outside too. Where do you usually go?"
-            : "That sounds like a great way to spend the day. Do you have a favorite trail or place to walk?";
+        return localResponse(
+            level == EnglishLevel.BEGINNER
+                ? "That sounds fun! I like being outside too. Where do you usually go?"
+                : "That sounds like a great way to spend the day. Do you have a favorite trail or place to walk?");
       }
       if (latest.contains("food") || latest.contains("cook") || latest.contains("restaurant")) {
-        return level == EnglishLevel.BEGINNER
-            ? "Nice! Food is always fun to talk about. What dish do you like best?"
-            : "Now you're making me hungry! What's a dish you could happily eat again and again?";
+        return localResponse(
+            level == EnglishLevel.BEGINNER
+                ? "Nice! Food is always fun to talk about. What dish do you like best?"
+                : "Now you're making me hungry! What's a dish you could happily eat again and again?");
       }
       if (turn % 3 == 0) {
-        return level == EnglishLevel.BEGINNER
-            ? "I see. Thanks for telling me!"
-            : "I get what you mean. Thanks for sharing that with me.";
+        return localResponse(
+            level == EnglishLevel.BEGINNER
+                ? "I see. Thanks for telling me!"
+                : "I get what you mean. Thanks for sharing that with me.");
       }
-      return level == EnglishLevel.ADVANCED
-          ? "That's an interesting point. What stands out to you most about it?"
-          : "Oh, I see! What do you like most about it?";
+      return localResponse(
+          level == EnglishLevel.ADVANCED
+              ? "That's an interesting point. What stands out to you most about it?"
+              : "Oh, I see! What do you like most about it?");
+    }
+
+    private static AiResponse localResponse(String text) {
+      return new AiResponse(text, 0, 0, "local-llm");
     }
 
     public String translate(String englishText) {
@@ -178,8 +191,8 @@ public class AiClientConfig {
       this.historyLimit = historyLimit;
     }
 
-    public String greeting(EnglishLevel level) {
-      return chat(
+    public AiResponse greeting(EnglishLevel level) {
+      return chatWithUsage(
           List.of(
               Map.of(
                   "role",
@@ -193,7 +206,7 @@ public class AiClientConfig {
                   "Start the conversation with one friendly greeting and question.")));
     }
 
-    public String reply(List<ConversationMessage> messages, EnglishLevel level) {
+    public AiResponse reply(List<ConversationMessage> messages, EnglishLevel level) {
       var list = new ArrayList<Map<String, String>>();
       list.add(
           Map.of(
@@ -211,7 +224,7 @@ public class AiClientConfig {
                           x.getRole() == MessageRole.USER ? "user" : "assistant",
                           "content",
                           x.getContent())));
-      return chat(list);
+      return chatWithUsage(list);
     }
 
     public String translate(String englishText) {
@@ -240,6 +253,10 @@ public class AiClientConfig {
     }
 
     private String chat(List<Map<String, String>> messages) {
+      return chatWithUsage(messages).text();
+    }
+
+    private AiResponse chatWithUsage(List<Map<String, String>> messages) {
       long startedAt = System.nanoTime();
       try {
         JsonNode result =
@@ -256,7 +273,11 @@ public class AiClientConfig {
             result.path("usage").path("prompt_tokens").asInt(-1),
             result.path("usage").path("completion_tokens").asInt(-1),
             Duration.ofNanos(System.nanoTime() - startedAt).toMillis());
-        return result.path("choices").path(0).path("message").path("content").asText();
+        return new AiResponse(
+            result.path("choices").path(0).path("message").path("content").asText(),
+            result.path("usage").path("prompt_tokens").asInt(0),
+            result.path("usage").path("completion_tokens").asInt(0),
+            model);
       } catch (Exception exception) {
         log.error(
             "action=callAi status=FAILED model={} messageCount={} durationMs={}",

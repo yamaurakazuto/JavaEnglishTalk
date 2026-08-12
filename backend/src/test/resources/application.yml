@@ -22,6 +22,9 @@ app:
     model: test
     timeout-seconds: 30
     history-limit: 20
+    input-usd-per-million: 0.40
+    output-usd-per-million: 1.60
+    yen-per-usd: 160
   speech:
     stt-model: test-stt
     tts-model: test-tts

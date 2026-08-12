@@ -25,9 +25,13 @@ class LocalAiClientTest {
             message(MessageRole.ASSISTANT, "How was your weekend?", 1),
             message(MessageRole.USER, "I went hiking in the mountains.", 2));
 
-    assertThat(ai.reply(messages, EnglishLevel.INTERMEDIATE))
+    var response = ai.reply(messages, EnglishLevel.INTERMEDIATE);
+
+    assertThat(response.text())
         .containsIgnoringCase("trail")
         .doesNotContain("How did that make you feel?");
+    assertThat(response.inputTokens()).isZero();
+    assertThat(response.outputTokens()).isZero();
   }
 
   @Test

@@ -33,7 +33,8 @@ class VoiceConversationServiceTest {
             List.of(
                 new ConversationDtos.MessageResponse(
                     2L, "ASSISTANT", "That sounds fun!", null, 3, Instant.now())),
-            null);
+            null,
+            new ConversationDtos.LlmUsageResponse(0, 0, 0, "local-llm"));
     when(recognition.transcribe(
             org.mockito.ArgumentMatchers.any(),
             org.mockito.ArgumentMatchers.any(),

@@ -85,6 +85,10 @@ class ConversationIntegrationTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.messages[1].role").value("USER"))
         .andExpect(jsonPath("$.messages[2].role").value("ASSISTANT"))
+        .andExpect(jsonPath("$.llmUsage.inputTokens").value(0))
+        .andExpect(jsonPath("$.llmUsage.outputTokens").value(0))
+        .andExpect(jsonPath("$.llmUsage.estimatedCostMicros").value(0))
+        .andExpect(jsonPath("$.llmUsage.model").value("local-llm"))
         .andExpect(
             jsonPath("$.messages[2].content")
                 .value(org.hamcrest.Matchers.containsString("Where do you usually go?")));
