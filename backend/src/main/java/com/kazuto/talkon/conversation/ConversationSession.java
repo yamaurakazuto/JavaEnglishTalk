@@ -37,6 +37,18 @@ public class ConversationSession {
   @Column(name = "finished_at")
   private Instant finishedAt;
 
+  @Column(name = "llm_input_tokens", nullable = false)
+  private long llmInputTokens;
+
+  @Column(name = "llm_output_tokens", nullable = false)
+  private long llmOutputTokens;
+
+  @Column(name = "llm_cost_micros", nullable = false)
+  private long llmCostMicros;
+
+  @Column(name = "llm_model", length = 100)
+  private String llmModel;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -51,6 +63,9 @@ public class ConversationSession {
     this.startedAt = Instant.now();
     this.createdAt = startedAt;
     this.updatedAt = startedAt;
+    this.llmInputTokens = 0;
+    this.llmOutputTokens = 0;
+    this.llmCostMicros = 0;
   }
 
   public Long getId() {
@@ -71,6 +86,30 @@ public class ConversationSession {
 
   public Instant getFinishedAt() {
     return finishedAt;
+  }
+
+  public long getLlmInputTokens() {
+    return llmInputTokens;
+  }
+
+  public long getLlmOutputTokens() {
+    return llmOutputTokens;
+  }
+
+  public long getLlmCostMicros() {
+    return llmCostMicros;
+  }
+
+  public String getLlmModel() {
+    return llmModel;
+  }
+
+  public void addLlmUsage(int inputTokens, int outputTokens, long costMicros, String model) {
+    llmInputTokens += Math.max(0, inputTokens);
+    llmOutputTokens += Math.max(0, outputTokens);
+    llmCostMicros += Math.max(0, costMicros);
+    llmModel = model;
+    updatedAt = Instant.now();
   }
 
   public void end() {

@@ -62,6 +62,12 @@ test("会話画面の上部と入力欄の下から会話を終了できる", as
       },
     ],
     feedback: null,
+    llmUsage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      estimatedCostMicros: 0,
+      model: "local-llm",
+    },
   };
   vi.spyOn(api, "me").mockResolvedValue({
     id: 1,

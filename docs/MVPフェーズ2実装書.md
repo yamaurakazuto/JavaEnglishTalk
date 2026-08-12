@@ -159,3 +159,30 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 - サーバーはファイルheaderや実durationを解析せず、Content-Type、bytes、フロント60秒で制限する。
 - TTS音声は保存しないため、再生成頻度を実測後に期限付きcacheを検討する。
 - Realtime APIは分離構成が継続的に10秒を超えた場合だけ比較する。
+
+## 8. 会話単位のToken・料金表示
+
+OpenAIのChat Completionsレスポンスに含まれる `prompt_tokens` と `completion_tokens` を、会話開始と通常返信ごとに取得する。`ConversationSession`へ入力Token、出力Token、概算料金を累積し、会話終了後のFeedback末尾に表示する。
+
+翻訳と終了後Feedbackは「英会話中に使った料金」と区別するため、この集計には含めない。Fake LLMはTokenを0として返し、「料金は発生していない」と画面に明示する。
+
+概算料金は次の設定値を使用する。
+
+| 環境変数                     | 初期値 | 内容                      |
+| ---------------------------- | -----: | ------------------------- |
+| `LLM_INPUT_USD_PER_MILLION`  | `0.40` | 入力100万TokenあたりのUSD |
+| `LLM_OUTPUT_USD_PER_MILLION` | `1.60` | 出力100万TokenあたりのUSD |
+| `LLM_YEN_PER_USD`            |  `160` | 円換算レート              |
+
+料金改定と為替変動があるため、画面上では確定請求額ではなく概算として表示する。モデルを変更した場合は、モデルと同時に単価設定も変更する。
+
+追加・変更した主なファイルは次のとおり。
+
+- `ConversationAIService.java`：AI英文とToken利用量を返す `AiResponse`
+- `AiClientConfig.java`：OpenAI usageの取得、Fake利用量0
+- `LlmCostCalculator.java`：Token単価と為替による概算料金計算
+- `ConversationSession.java`：会話単位の累積利用量
+- `V4__add_conversation_llm_usage.sql`：Token、料金、モデル列
+- `ConversationDtos.java`、`frontend/src/shared/api.ts`：利用量のAPI契約
+- `FeedbackPanel.tsx`：Token、料金、ホームボタン表示
+- `LlmCostCalculatorTest.java`：料金単位のテスト

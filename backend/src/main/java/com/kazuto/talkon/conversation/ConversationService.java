@@ -31,6 +31,7 @@ public class ConversationService {
   private final UserRepository users;
   private final ConversationAIService ai;
   private final TranslationService translations;
+  private final LlmCostCalculator costs;
   private final ObjectMapper mapper;
   private final FeedbackGenerationService feedbackGenerator;
   private final TransactionTemplate tx;
@@ -42,6 +43,7 @@ public class ConversationService {
       UserRepository u,
       ConversationAIService a,
       TranslationService translations,
+      LlmCostCalculator costs,
       ObjectMapper mapper,
       FeedbackGenerationService feedbackGenerator,
       TransactionTemplate tx) {
@@ -51,6 +53,7 @@ public class ConversationService {
     users = u;
     ai = a;
     this.translations = translations;
+    this.costs = costs;
     this.mapper = mapper;
     this.feedbackGenerator = feedbackGenerator;
     this.tx = tx;
@@ -62,7 +65,7 @@ public class ConversationService {
     if (existing.isPresent()) {
       return new StartResult(detail(existing.get(), userId), false);
     }
-    final String greeting;
+    final ConversationAIService.AiResponse greeting;
     try {
       greeting = ai.greeting(level(userId));
     } catch (Exception e) {
@@ -78,8 +81,10 @@ public class ConversationService {
               if (active.isPresent()) {
                 return new Created(active.get(), false);
               }
-              var s = sessions.save(new ConversationSession(user));
-              messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, greeting, 1));
+              var s = new ConversationSession(user);
+              recordUsage(s, greeting);
+              sessions.save(s);
+              messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, greeting.text(), 1));
               return new Created(s, true);
             });
     return new StartResult(detail(created.session(), userId), created.created());
@@ -107,7 +112,14 @@ public class ConversationService {
             .map(x -> ConversationDtos.feedback(x, mapper))
             .orElse(null);
     return new ConversationDtos.Detail(
-        s.getId(), s.getStatus().name(), s.getStartedAt(), s.getFinishedAt(), ms, f);
+        s.getId(),
+        s.getStatus().name(),
+        s.getStartedAt(),
+        s.getFinishedAt(),
+        ms,
+        f,
+        new ConversationDtos.LlmUsageResponse(
+            s.getLlmInputTokens(), s.getLlmOutputTokens(), s.getLlmCostMicros(), s.getLlmModel()));
   }
 
   public ConversationDtos.Detail send(Long id, Long userId, String raw) {
@@ -129,7 +141,7 @@ public class ConversationService {
           int n = messages.findBySessionIdOrderBySequenceNo(id).size() + 1;
           messages.save(new ConversationMessage(s, MessageRole.USER, content, n));
         });
-    String reply;
+    ConversationAIService.AiResponse reply;
     try {
       reply = ai.reply(messages.findBySessionIdOrderBySequenceNo(id), level(userId));
     } catch (Exception e) {
@@ -142,7 +154,8 @@ public class ConversationService {
             throw conflict("会話の状態が変更されました。");
           }
           int n = messages.findBySessionIdOrderBySequenceNo(id).size() + 1;
-          messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, reply, n));
+          messages.save(new ConversationMessage(s, MessageRole.ASSISTANT, reply.text(), n));
+          recordUsage(s, reply);
         });
     log.info(
         "userId={} conversationId={} action=sendMessage status=COMPLETED durationMs={}",
@@ -263,6 +276,14 @@ public class ConversationService {
       throw new ApiException(HttpStatus.CONFLICT, "ENGLISH_LEVEL_REQUIRED", "英会話レベルを選択してください。");
     }
     return level;
+  }
+
+  private void recordUsage(ConversationSession session, ConversationAIService.AiResponse response) {
+    session.addLlmUsage(
+        response.inputTokens(),
+        response.outputTokens(),
+        costs.estimateMicros(response.inputTokens(), response.outputTokens()),
+        response.model());
   }
 
   private void runAfterCommit(Runnable action) {

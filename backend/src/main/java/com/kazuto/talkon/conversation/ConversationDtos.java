@@ -35,7 +35,11 @@ public final class ConversationDtos {
       Instant startedAt,
       Instant finishedAt,
       List<MessageResponse> messages,
-      FeedbackResponse feedback) {}
+      FeedbackResponse feedback,
+      LlmUsageResponse llmUsage) {}
+
+  public record LlmUsageResponse(
+      long inputTokens, long outputTokens, long estimatedCostMicros, String model) {}
 
   public record Summary(Long id, String status, Instant startedAt, Instant finishedAt) {}
 

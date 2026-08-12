@@ -6,7 +6,9 @@ import com.kazuto.talkon.user.EnglishLevel;
 import java.util.List;
 
 public interface ConversationAIService {
-  String greeting(EnglishLevel level);
+  AiResponse greeting(EnglishLevel level);
 
-  String reply(List<ConversationMessage> messages, EnglishLevel level);
+  AiResponse reply(List<ConversationMessage> messages, EnglishLevel level);
+
+  record AiResponse(String text, int inputTokens, int outputTokens, String model) {}
 }

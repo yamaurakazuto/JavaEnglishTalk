@@ -3,6 +3,7 @@
  */
 
 import { Conversation } from "../../shared/api";
+import { Link } from "react-router-dom";
 
 type FeedbackPanelProps = {
   conversation: Conversation;
@@ -22,6 +23,7 @@ export function FeedbackPanel({
       <section className="feedback feedback-state" aria-live="polite">
         <h2>フィードバックを生成しています</h2>
         <p>会話は終了しました。この画面を開いたまま少しお待ちください。</p>
+        <HomeLink />
       </section>
     );
   }
@@ -37,6 +39,7 @@ export function FeedbackPanel({
         <button type="button" onClick={onRetry} disabled={retrying}>
           {retrying ? "再生成しています…" : "もう一度試す"}
         </button>
+        <HomeLink />
       </section>
     );
   }
@@ -81,7 +84,52 @@ export function FeedbackPanel({
         </>
       )}
       <blockquote>{feedback.overallComment}</blockquote>
+      <LlmUsage conversation={conversation} />
+      <HomeLink />
     </section>
+  );
+}
+
+function LlmUsage({ conversation }: { conversation: Conversation }) {
+  const usage = conversation.llmUsage;
+  const totalTokens = usage.inputTokens + usage.outputTokens;
+  const estimatedYen = usage.estimatedCostMicros / 1_000_000;
+
+  return (
+    <section className="llm-usage" aria-label="AI利用料金">
+      <h3>今回のAI利用量</h3>
+      <dl>
+        <div>
+          <dt>入力トークン</dt>
+          <dd>{usage.inputTokens.toLocaleString()}</dd>
+        </div>
+        <div>
+          <dt>出力トークン</dt>
+          <dd>{usage.outputTokens.toLocaleString()}</dd>
+        </div>
+        <div>
+          <dt>合計</dt>
+          <dd>{totalTokens.toLocaleString()} tokens</dd>
+        </div>
+        <div>
+          <dt>概算料金</dt>
+          <dd>約 {estimatedYen.toFixed(4)} 円</dd>
+        </div>
+      </dl>
+      <p>
+        {usage.model === "local-llm"
+          ? "現在はFakeモードのため、OpenAI料金は発生していません。"
+          : `${usage.model ?? "設定中のモデル"} の会話開始・返信のみを集計した概算です。`}
+      </p>
+    </section>
+  );
+}
+
+function HomeLink() {
+  return (
+    <Link className="home-link-button" to="/">
+      ホームへ戻る
+    </Link>
   );
 }
 
