@@ -164,6 +164,8 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 
 OpenAIのChat Completionsレスポンスに含まれる `prompt_tokens` と `completion_tokens` を、会話開始と通常返信ごとに取得する。`ConversationSession`へ入力Token、出力Token、概算料金を累積し、会話終了後のFeedback末尾に表示する。
 
+会話中も利用量を把握できるよう、会話画面上部の「会話を終了」の横へ、合計Tokenと概算円額を小さく表示する。AI返信後に返る最新のConversationレスポンスで更新するため、追加の料金取得APIやpollingは行わない。
+
 翻訳と終了後Feedbackは「英会話中に使った料金」と区別するため、この集計には含めない。Fake LLMはTokenを0として返し、「料金は発生していない」と画面に明示する。
 
 概算料金は次の設定値を使用する。
