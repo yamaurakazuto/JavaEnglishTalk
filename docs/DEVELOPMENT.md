@@ -17,7 +17,15 @@ npx --prefix frontend playwright install chromium
 npm run dev
 ```
 
-ブラウザで `http://localhost:5173` を開きます。Spring Bootは `http://localhost:8080` で同時起動します。`OPENAI_API_KEY` を空にすると、ローカル開発・動作確認用の決定的Fake LLMが使われます。実際のOpenAI互換APIを使う場合は環境変数へキーを設定してください。秘密情報をコミットしないでください。
+ブラウザで `http://localhost:5173` を開きます。Spring Bootは `http://localhost:8080` で同時起動します。`npm run dev` はルートの `.env` が存在する場合だけ自動で読み込みます。
+
+初回だけ `.env.example` を `.env` へコピーし、`.env` の `OPENAI_API_KEY` に実際のキーを設定してください。
+
+```bash
+cp .env.example .env
+```
+
+`.env` はGit管理から除外されています。`.env.example` に実際のAPIキーを書かないでください。`OPENAI_API_KEY` を空にすると、ローカル開発・動作確認用の決定的Fake LLMが使われます。
 
 OpenAPI UIは `http://localhost:8080/swagger-ui/index.html`、仕様JSONは `http://localhost:8080/v3/api-docs` です。
 

@@ -14,5 +14,7 @@ frontend/*.tsbuildinfo
 frontend/playwright-report/
 frontend/test-results/
 .env
+.env.*
+!.env.example
 *.log
 data/
