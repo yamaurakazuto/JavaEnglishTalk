@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -27,8 +28,8 @@ public class VoiceConversationService {
 
   public VoiceConversationService(
       ConversationService conversations,
-      SpeechRecognitionService recognition,
-      TextToSpeechService speech,
+      @Qualifier("speechRecognitionService") SpeechRecognitionService recognition,
+      @Qualifier("textToSpeechService") TextToSpeechService speech,
       SpeechProperties properties) {
     this.conversations = conversations;
     this.recognition = recognition;
