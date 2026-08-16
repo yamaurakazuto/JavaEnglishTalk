@@ -263,7 +263,7 @@ public class AiClientConfig {
             http.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("model", model, "messages", messages, "temperature", 0.5))
+                .body(Map.of("model", model, "messages", messages))
                 .retrieve()
                 .body(JsonNode.class);
         log.info(
