@@ -78,7 +78,7 @@ cp .env.example .env
 `.env`へ、OpenAI Platformで発行したAPIキーを設定します。
 
 ```env
-OPENAI_API_KEY=sk-発行したAPIキー
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 APIキーは`.env.example`、GitHub、チャット、スクリーンショットへ掲載しないでください。`.env`はGitの管理対象外です。
