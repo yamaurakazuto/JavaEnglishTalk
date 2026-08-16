@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -93,6 +94,8 @@ public class SecurityConfig {
       HttpSecurity http,
       UserRepository users,
       ObjectMapper mapper,
+      LocalAutoLoginService localAutoLoginService,
+      @Value("${app.local-auto-login:false}") boolean localAutoLoginEnabled,
       @Value("${app.cors-origin}") String origin)
       throws Exception {
     var csrf = CookieCsrfTokenRepository.withHttpOnlyFalse();
@@ -106,6 +109,9 @@ public class SecurityConfig {
     source.registerCorsConfiguration("/**", cors);
     return http.csrf(c -> c.csrfTokenRepository(csrf))
         .cors(c -> c.configurationSource(source))
+        .addFilterBefore(
+            new LocalAutoLoginFilter(localAutoLoginEnabled, localAutoLoginService),
+            AnonymousAuthenticationFilter.class)
         .formLogin(c -> c.disable())
         .httpBasic(c -> c.disable())
         .authorizeHttpRequests(
