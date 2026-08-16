@@ -64,6 +64,26 @@ test("必要なときだけAIメッセージを翻訳する", async () => {
   expect(onMessageUpdated).toHaveBeenCalledWith(translated);
 });
 
+test("AI英文の単語へカーソルを合わせると日本語訳を表示する", async () => {
+  vi.spyOn(api, "translateWord").mockResolvedValue({
+    word: "day",
+    translation: "日、一日",
+  });
+
+  render(
+    <MessageList
+      conversation={conversation}
+      onMessageUpdated={vi.fn()}
+      onError={vi.fn()}
+    />,
+  );
+
+  await userEvent.hover(screen.getByText("day"));
+
+  expect(await screen.findByText("日、一日")).toBeInTheDocument();
+  expect(api.translateWord).toHaveBeenCalledWith(1, 10, "day");
+});
+
 test("教材形式で修正文、日本語理由、別表現を表示する", () => {
   render(
     <MemoryRouter>

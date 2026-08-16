@@ -17,6 +17,10 @@ export type Message = {
   sequenceNo: number;
   createdAt: string;
 };
+export type WordTranslation = {
+  word: string;
+  translation: string;
+};
 export type Feedback = {
   status: "GENERATING" | "COMPLETED" | "FAILED";
   summary: string | null;
@@ -226,6 +230,14 @@ export const api = {
     request<Message>(
       `/api/conversations/${conversationId}/messages/${messageId}/translation`,
       { method: "POST" },
+    ),
+  translateWord: (conversationId: number, messageId: number, word: string) =>
+    request<WordTranslation>(
+      `/api/conversations/${conversationId}/messages/${messageId}/word-translation`,
+      {
+        method: "POST",
+        body: JSON.stringify({ word }),
+      },
     ),
   history: () => request<HistoryPage>("/api/conversations?page=0&size=20"),
 };

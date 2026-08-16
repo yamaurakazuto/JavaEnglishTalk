@@ -4,6 +4,7 @@
 
 import { useState } from "react";
 import { api, Conversation, Message } from "../../shared/api";
+import { WordTranslationText } from "./WordTranslationText";
 
 type MessageListProps = {
   conversation: Conversation;
@@ -71,7 +72,16 @@ export function MessageList({
           className={`message ${message.role.toLowerCase()}`}
         >
           <small>{message.role === "USER" ? "You" : "TalkOn"}</small>
-          <p>{message.content}</p>
+          {message.role === "ASSISTANT" ? (
+            <WordTranslationText
+              conversationId={conversation.id}
+              messageId={message.id}
+              content={message.content}
+              onError={onError}
+            />
+          ) : (
+            <p>{message.content}</p>
+          )}
           {message.role === "ASSISTANT" && (
             <>
               {message.translation && openTranslations.includes(message.id) && (

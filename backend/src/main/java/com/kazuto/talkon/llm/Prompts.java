@@ -24,6 +24,10 @@ public final class Prompts {
   public static final String TRANSLATION =
       "Translate the following English conversation message into natural, concise Japanese."
           + " Return only the Japanese translation without notes or quotation marks.";
+  public static final String WORD_TRANSLATION =
+      "Translate the specified English word into concise Japanese using the supplied sentence"
+          + " as context. Return only one or two common Japanese meanings without notes or"
+          + " quotation marks.";
   public static final String FEEDBACK =
       "You are an English conversation coach. Analyze only USER messages and evaluate the whole"
           + " conversation in context. Return JSON with summary, strengths (1-5 strings),"
