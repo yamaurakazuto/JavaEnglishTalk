@@ -29,6 +29,7 @@ server:
         secure: ${COOKIE_SECURE:false}
 app:
   cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+  local-auto-login: ${LOCAL_AUTO_LOGIN:false}
   llm:
     api-key: ${OPENAI_API_KEY:}
     base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
