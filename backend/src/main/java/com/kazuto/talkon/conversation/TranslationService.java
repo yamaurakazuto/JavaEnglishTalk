@@ -4,4 +4,6 @@ package com.kazuto.talkon.conversation;
 
 public interface TranslationService {
   String translate(String englishText);
+
+  String translateWord(String word, String sentence);
 }

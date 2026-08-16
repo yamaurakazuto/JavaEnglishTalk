@@ -142,6 +142,46 @@ class ConversationIntegrationTest {
   }
 
   @Test
+  void assistantWordCanBeTranslatedInItsConversationContext() throws Exception {
+    String json =
+        mvc.perform(post("/api/conversations").with(auth(owner)).with(csrf()))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    var conversation = new ObjectMapper().readTree(json);
+    long conversationId = conversation.path("id").asLong();
+    long messageId = conversation.path("messages").path(0).path("id").asLong();
+
+    mvc.perform(
+            post("/api/conversations/"
+                    + conversationId
+                    + "/messages/"
+                    + messageId
+                    + "/word-translation")
+                .with(auth(owner))
+                .with(csrf())
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"word\":\"How\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.word").value("How"))
+        .andExpect(jsonPath("$.translation").isNotEmpty());
+
+    mvc.perform(
+            post("/api/conversations/"
+                    + conversationId
+                    + "/messages/"
+                    + messageId
+                    + "/word-translation")
+                .with(auth(owner))
+                .with(csrf())
+                .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                .content("{\"word\":\"missing\"}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("INVALID_WORD"));
+  }
+
+  @Test
   void voiceTurnTranscribesRepliesAndReturnsPlayableAudio() throws Exception {
     String json =
         mvc.perform(post("/api/conversations").with(auth(owner)).with(csrf()))

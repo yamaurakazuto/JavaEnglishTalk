@@ -12,6 +12,7 @@ import com.kazuto.talkon.user.EnglishLevel;
 import com.kazuto.talkon.user.UserRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class ConversationService {
   private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
+  private static final Pattern ENGLISH_WORD = Pattern.compile("[A-Za-z]+(?:['’][A-Za-z]+)*");
 
   private final ConversationSessionRepository sessions;
   private final ConversationMessageRepository messages;
@@ -234,6 +236,32 @@ public class ConversationService {
         messages.findByIdAndSessionId(messageId, conversationId).orElseThrow());
   }
 
+  public ConversationDtos.WordTranslationResponse translateWord(
+      Long conversationId, Long messageId, Long userId, String requestedWord) {
+    owned(conversationId, userId);
+    var message =
+        messages
+            .findByIdAndSessionId(messageId, conversationId)
+            .filter(item -> item.getRole() == MessageRole.ASSISTANT)
+            .orElseThrow(
+                () -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "AIメッセージが見つかりません。"));
+    var word = requestedWord.trim();
+    if (!ENGLISH_WORD.matcher(word).matches() || !containsWord(message.getContent(), word)) {
+      throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_WORD", "翻訳する英単語を確認してください。");
+    }
+    try {
+      var translation = translations.translateWord(word, message.getContent()).trim();
+      if (translation.isEmpty()) {
+        throw new IllegalStateException("Word translation was empty");
+      }
+      return new ConversationDtos.WordTranslationResponse(word, translation);
+    } catch (ApiException exception) {
+      throw exception;
+    } catch (Exception exception) {
+      throw llm();
+    }
+  }
+
   public ConversationDtos.PageResponse history(Long userId, int page, int size) {
     var safePage = Math.max(0, page);
     var safeSize = Math.max(1, Math.min(50, size));
@@ -263,6 +291,16 @@ public class ConversationService {
 
   private static ApiException conflict(String m) {
     return new ApiException(HttpStatus.CONFLICT, "CONFLICT", m);
+  }
+
+  private static boolean containsWord(String sentence, String requestedWord) {
+    var matcher = ENGLISH_WORD.matcher(sentence);
+    while (matcher.find()) {
+      if (matcher.group().equalsIgnoreCase(requestedWord)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static ApiException llm() {

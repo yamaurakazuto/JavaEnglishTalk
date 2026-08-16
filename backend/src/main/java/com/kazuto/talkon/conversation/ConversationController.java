@@ -27,6 +27,8 @@ public class ConversationController {
 
   public record MessageRequest(@NotBlank @Size(max = 2000) String content) {}
 
+  public record WordTranslationRequest(@NotBlank @Size(max = 60) String word) {}
+
   @PostMapping
   public ResponseEntity<ConversationDtos.Detail> start(Authentication a) {
     var result = service.start(CurrentUser.require(a).id());
@@ -65,6 +67,16 @@ public class ConversationController {
   public ConversationDtos.MessageResponse translate(
       @PathVariable Long id, @PathVariable Long messageId, Authentication a) {
     return service.translate(id, messageId, CurrentUser.require(a).id());
+  }
+
+  @PostMapping("/{id}/messages/{messageId}/word-translation")
+  public ConversationDtos.WordTranslationResponse translateWord(
+      @PathVariable Long id,
+      @PathVariable Long messageId,
+      @Valid @RequestBody WordTranslationRequest request,
+      Authentication authentication) {
+    return service.translateWord(
+        id, messageId, CurrentUser.require(authentication).id(), request.word());
   }
 
   @GetMapping

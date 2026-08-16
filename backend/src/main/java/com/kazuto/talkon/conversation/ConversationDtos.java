@@ -19,6 +19,8 @@ public final class ConversationDtos {
       int sequenceNo,
       Instant createdAt) {}
 
+  public record WordTranslationResponse(String word, String translation) {}
+
   public record FeedbackResponse(
       String status,
       String summary,

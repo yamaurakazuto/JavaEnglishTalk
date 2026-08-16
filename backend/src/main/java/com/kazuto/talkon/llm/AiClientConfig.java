@@ -127,6 +127,18 @@ public class AiClientConfig {
       return "なるほど、よく分かります。それは印象に残る出来事ですね。";
     }
 
+    public String translateWord(String word, String sentence) {
+      return switch (word.toLowerCase()) {
+        case "how" -> "どのように";
+        case "your" -> "あなたの";
+        case "day" -> "日、一日";
+        case "today" -> "今日";
+        case "coffee" -> "コーヒー";
+        case "study", "studying" -> "勉強する、勉強している";
+        default -> "文脈に応じた「" + word + "」の意味";
+      };
+    }
+
     public FeedbackData feedback(List<ConversationMessage> m) {
       var userMessages =
           m.stream()
@@ -232,6 +244,13 @@ public class AiClientConfig {
           List.of(
               Map.of("role", "system", "content", Prompts.TRANSLATION),
               Map.of("role", "user", "content", englishText)));
+    }
+
+    public String translateWord(String word, String sentence) {
+      return chat(
+          List.of(
+              Map.of("role", "system", "content", Prompts.WORD_TRANSLATION),
+              Map.of("role", "user", "content", "Word: " + word + "\nSentence: " + sentence)));
     }
 
     public FeedbackData feedback(List<ConversationMessage> messages) {

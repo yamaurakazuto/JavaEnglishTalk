@@ -702,6 +702,69 @@ main {
   border-top-left-radius: 4px;
   box-shadow: var(--shadow-card);
 }
+.assistant-message-text {
+  position: relative;
+}
+.translatable-word {
+  position: relative;
+  display: inline-block;
+  border-radius: 4px;
+  cursor: help;
+  outline: none;
+}
+.translatable-word:hover,
+.translatable-word:focus-visible {
+  background: #e8efff;
+  color: #2458d3;
+}
+.word-translation-tooltip {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  min-width: max-content;
+  max-width: 220px;
+  transform: translateX(-50%);
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #18233b;
+  color: #fff;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  box-shadow: 0 6px 18px #18233b33;
+}
+.word-translation-tooltip::after {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #18233b;
+  content: "";
+}
+.word-translation-tooltip strong,
+.word-translation-tooltip span {
+  display: block;
+}
+.word-translation-tooltip strong {
+  margin-bottom: 2px;
+  color: #a9c2ff;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .user {
   justify-self: end;
   background: var(--color-primary);
