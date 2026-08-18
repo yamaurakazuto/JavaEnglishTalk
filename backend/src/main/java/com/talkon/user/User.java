@@ -1,0 +1,75 @@
+// 利用者の表示名・メール・パスワードハッシュを永続化します。認証主体を表現するEntityです。
+
+package com.talkon.user;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
+
+@Entity
+@Table(name = "users")
+public class User {
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "display_name", nullable = false, length = 50)
+  private String displayName;
+
+  @Column(nullable = false, unique = true, length = 255)
+  private String email;
+
+  @Column(name = "password_hash", nullable = false, length = 100)
+  private String passwordHash;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "english_level", length = 20)
+  private EnglishLevel englishLevel;
+
+  @Column(name = "created_at", nullable = false)
+  private Instant createdAt;
+
+  @Column(name = "updated_at", nullable = false)
+  private Instant updatedAt;
+
+  protected User() {}
+
+  public User(String displayName, String email, String passwordHash) {
+    this.displayName = displayName;
+    this.email = email;
+    this.passwordHash = passwordHash;
+    this.createdAt = Instant.now();
+    this.updatedAt = this.createdAt;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public String getDisplayName() {
+    return displayName;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public String getPasswordHash() {
+    return passwordHash;
+  }
+
+  public EnglishLevel getEnglishLevel() {
+    return englishLevel;
+  }
+
+  public void selectEnglishLevel(EnglishLevel level) {
+    englishLevel = level;
+    updatedAt = Instant.now();
+  }
+}

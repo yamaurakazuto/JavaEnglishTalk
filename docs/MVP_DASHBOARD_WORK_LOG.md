@@ -56,11 +56,11 @@ Java側もController、Service、Responseに分け、HTTP受付、集計処理�
 
 | 種別 | ファイル名                                                                                | 作業内容                                       |
 | ---- | ----------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
-| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
-| 新規 | `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
-| 変更 | `backend/src/main/java/com/kazuto/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
-| 変更 | `backend/src/test/java/com/kazuto/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
+| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
+| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
+| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
+| 変更 | `backend/src/main/java/com/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
+| 変更 | `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
 | 変更 | `backend/src/main/resources/db/migration/V1__initial_schema.sql`                          | Flywayチェックサム維持のため先頭コメントを除去 |
 | 新規 | `frontend/src/features/dashboard/DashboardPage.tsx`                                       | ダッシュボード画面全体と画面遷移の実装         |
 | 新規 | `frontend/src/features/dashboard/StudySummary.tsx`                                        | 今日の学習時間と学習日数の表示                 |
@@ -95,11 +95,11 @@ GET /api/dashboard
 
 ### 4.2 追加したJavaファイル
 
-#### `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardController.java`
+#### `backend/src/main/java/com/talkon/dashboard/DashboardController.java`
 
 `GET /api/dashboard` を受け付けるControllerです。認証済みユーザーのIDをServiceへ渡します。
 
-#### `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardService.java`
+#### `backend/src/main/java/com/talkon/dashboard/DashboardService.java`
 
 会話セッションを読み込み、次の内容をJava上で集計します。
 
@@ -113,17 +113,17 @@ GET /api/dashboard
 
 52週間の開始日は日曜日にそろえています。これは、React側で7行のカレンダーを週単位で並べやすくするためです。
 
-#### `backend/src/main/java/com/kazuto/talkon/dashboard/DashboardResponse.java`
+#### `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`
 
 ダッシュボードAPI専用の返却形式です。日別データは内部の `DailyActivity` レコードにまとめました。
 
 ### 4.3 変更したJavaファイル
 
-#### `backend/src/main/java/com/kazuto/talkon/conversation/ConversationSessionRepository.java`
+#### `backend/src/main/java/com/talkon/conversation/ConversationSessionRepository.java`
 
 指定ユーザーの指定日時以降の会話を、開始日時順で取得するRepositoryメソッドを追加しました。全期間のデータを毎回読むのではなく、ダッシュボードに必要な期間だけ取得します。
 
-#### `backend/src/test/java/com/kazuto/talkon/ConversationIntegrationTest.java`
+#### `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`
 
 会話を開始した後にダッシュボードAPIを呼び出し、学習時間、学習日数、日別活動が返ることを確認するテストを追加しました。
 

@@ -123,24 +123,24 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 
 | ファイル                                                                          | 実装内容                   |
 | --------------------------------------------------------------------------------- | -------------------------- |
-| `backend/src/main/java/com/kazuto/talkon/TalkOnApplication.java`                  | 設定型scan                 |
-| `backend/src/main/java/com/kazuto/talkon/common/ApiExceptionHandler.java`         | multipart上限エラーの統一  |
-| `backend/src/main/java/com/kazuto/talkon/conversation/ConversationAIService.java` | 会話生成Port               |
-| `backend/src/main/java/com/kazuto/talkon/conversation/TranslationService.java`    | 翻訳専用Port               |
-| `backend/src/main/java/com/kazuto/talkon/conversation/ConversationService.java`   | Portへの依存               |
-| `backend/src/main/java/com/kazuto/talkon/llm/ConversationAiClient.java`           | adapter契約                |
-| `backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java`                 | 履歴上限、token、model計測 |
-| `backend/src/main/java/com/kazuto/talkon/llm/Prompts.java`                        | 会話品質規則               |
-| `backend/src/main/java/com/kazuto/talkon/speech/SpeechRecognitionService.java`    | STT Port                   |
-| `backend/src/main/java/com/kazuto/talkon/speech/TextToSpeechService.java`         | TTS Port                   |
-| `backend/src/main/java/com/kazuto/talkon/speech/SpeechProperties.java`            | 音声設定                   |
-| `backend/src/main/java/com/kazuto/talkon/speech/SpeechClientConfig.java`          | OpenAI/Fake adapter        |
-| `backend/src/main/java/com/kazuto/talkon/speech/VoiceConversationService.java`    | 音声ターン、検証、計測     |
-| `backend/src/main/java/com/kazuto/talkon/speech/VoiceConversationController.java` | multipart・音声API         |
+| `backend/src/main/java/com/talkon/TalkOnApplication.java`                  | 設定型scan                 |
+| `backend/src/main/java/com/talkon/common/ApiExceptionHandler.java`         | multipart上限エラーの統一  |
+| `backend/src/main/java/com/talkon/conversation/ConversationAIService.java` | 会話生成Port               |
+| `backend/src/main/java/com/talkon/conversation/TranslationService.java`    | 翻訳専用Port               |
+| `backend/src/main/java/com/talkon/conversation/ConversationService.java`   | Portへの依存               |
+| `backend/src/main/java/com/talkon/llm/ConversationAiClient.java`           | adapter契約                |
+| `backend/src/main/java/com/talkon/llm/AiClientConfig.java`                 | 履歴上限、token、model計測 |
+| `backend/src/main/java/com/talkon/llm/Prompts.java`                        | 会話品質規則               |
+| `backend/src/main/java/com/talkon/speech/SpeechRecognitionService.java`    | STT Port                   |
+| `backend/src/main/java/com/talkon/speech/TextToSpeechService.java`         | TTS Port                   |
+| `backend/src/main/java/com/talkon/speech/SpeechProperties.java`            | 音声設定                   |
+| `backend/src/main/java/com/talkon/speech/SpeechClientConfig.java`          | OpenAI/Fake adapter        |
+| `backend/src/main/java/com/talkon/speech/VoiceConversationService.java`    | 音声ターン、検証、計測     |
+| `backend/src/main/java/com/talkon/speech/VoiceConversationController.java` | multipart・音声API         |
 | `backend/src/main/resources/application.yml`                                      | モデル・上限設定           |
 | `backend/src/test/resources/application.yml`                                      | 非課金test設定             |
-| `backend/src/test/java/com/kazuto/talkon/ConversationIntegrationTest.java`        | 音声結合テスト             |
-| `backend/src/test/java/com/kazuto/talkon/VoiceConversationServiceTest.java`       | TTS部分失敗テスト          |
+| `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`        | 音声結合テスト             |
+| `backend/src/test/java/com/talkon/VoiceConversationServiceTest.java`       | TTS部分失敗テスト          |
 | `frontend/src/shared/api.ts`                                                      | multipart・音声取得・型    |
 | `frontend/src/features/conversation/VoiceRecorder.tsx`                            | 録音・認識表示・再生       |
 | `frontend/src/features/conversation/MessageList.tsx`                              | AI音声ボタン               |

@@ -17,11 +17,11 @@
 次の処理を、画面からAI呼び出しと保存まで追跡した。
 
 - `frontend/src/App.tsx` の会話画面と終了操作
-- `backend/src/main/java/com/kazuto/talkon/conversation/ConversationService.java` の履歴取得とAI呼び出し
-- `backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java` のローカルAI・OpenAI互換API実装
-- `backend/src/main/java/com/kazuto/talkon/llm/Prompts.java` の会話・フィードバック指示
-- `backend/src/main/java/com/kazuto/talkon/feedback/FeedbackGenerationService.java` の生成・検証・再試行
-- `backend/src/main/java/com/kazuto/talkon/feedback/FeedbackData.java` のフィードバック構造と入力検証
+- `backend/src/main/java/com/talkon/conversation/ConversationService.java` の履歴取得とAI呼び出し
+- `backend/src/main/java/com/talkon/llm/AiClientConfig.java` のローカルAI・OpenAI互換API実装
+- `backend/src/main/java/com/talkon/llm/Prompts.java` の会話・フィードバック指示
+- `backend/src/main/java/com/talkon/feedback/FeedbackGenerationService.java` の生成・検証・再試行
+- `backend/src/main/java/com/talkon/feedback/FeedbackData.java` のフィードバック構造と入力検証
 - フロントエンドおよびバックエンドの関連テスト
 
 ## 3. 調査結果と原因
@@ -30,7 +30,7 @@
 
 #### 原因箇所
 
-`backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java` の `LocalAiClient.reply()` が主な原因だった。
+`backend/src/main/java/com/talkon/llm/AiClientConfig.java` の `LocalAiClient.reply()` が主な原因だった。
 
 APIキーが設定されていないローカル環境では、READMEの仕様どおり外部LLMではなく `LocalAiClient` が使われる。修正前の応答は次の3質問をターンごとに切り替える方式だった。
 
@@ -40,7 +40,7 @@ APIキーが設定されていないローカル環境では、READMEの仕様�
 
 ユーザーの発言内容を応答生成に利用していなかったため、話題と質問が一致せず、同じ会話パターンが繰り返されていた。
 
-OpenAI互換APIを使う場合は直近20メッセージが渡されており、履歴欠落は発生していなかった。一方、`backend/src/main/java/com/kazuto/talkon/llm/Prompts.java` の指示は「自然に会話する」という抽象的な内容が中心で、最新発言の具体的な情報をどう拾うか、新しい話題を一度にいくつ導入するかが明確ではなかった。
+OpenAI互換APIを使う場合は直近20メッセージが渡されており、履歴欠落は発生していなかった。一方、`backend/src/main/java/com/talkon/llm/Prompts.java` の指示は「自然に会話する」という抽象的な内容が中心で、最新発言の具体的な情報をどう拾うか、新しい話題を一度にいくつ導入するかが明確ではなかった。
 
 #### 今回の対応
 
@@ -68,7 +68,7 @@ OpenAI互換APIを使う場合は直近20メッセージが渡されており、
 
 #### 原因箇所
 
-最大の原因は `backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java` の `LocalAiClient.feedback()` だった。
+最大の原因は `backend/src/main/java/com/talkon/llm/AiClientConfig.java` の `LocalAiClient.feedback()` だった。
 
 修正前は、最初のUSERメッセージだけを調べ、文字列が `Today is tired.` と完全一致した場合だけ訂正していた。それ以外では、会話内容や発言数に関係なく同じsummary、strengths、vocabularyTips、overallCommentを返していた。
 
@@ -94,9 +94,9 @@ OpenAI互換APIを使う場合は直近20メッセージが渡されており、
 
 | 種別 | ファイル                                                             | 変更内容                                                                 |
 | ---- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| 変更 | `backend/src/main/java/com/kazuto/talkon/llm/Prompts.java`           | 会話継続ルールと、会話固有フィードバックの評価基準を具体化               |
-| 変更 | `backend/src/main/java/com/kazuto/talkon/llm/AiClientConfig.java`    | ローカル会話を話題連動型へ変更し、複数パターンのフィードバック分析を追加 |
-| 新規 | `backend/src/test/java/com/kazuto/talkon/llm/LocalAiClientTest.java` | 話題連動応答と複数カテゴリの指摘を検証                                   |
+| 変更 | `backend/src/main/java/com/talkon/llm/Prompts.java`           | 会話継続ルールと、会話固有フィードバックの評価基準を具体化               |
+| 変更 | `backend/src/main/java/com/talkon/llm/AiClientConfig.java`    | ローカル会話を話題連動型へ変更し、複数パターンのフィードバック分析を追加 |
+| 新規 | `backend/src/test/java/com/talkon/llm/LocalAiClientTest.java` | 話題連動応答と複数カテゴリの指摘を検証                                   |
 | 変更 | `frontend/src/App.tsx`                                               | 入力欄の下へ会話終了ボタンを追加                                         |
 | 変更 | `frontend/src/styles.css`                                            | 下部操作領域と終了ボタンの表示を追加                                     |
 | 変更 | `frontend/src/App.test.tsx`                                          | 上下2つの終了導線と下部終了操作を検証                                    |
