@@ -7,7 +7,7 @@ plugins {
     id 'com.diffplug.spotless'
 }
 
-group = 'com.kazuto'
+group = 'com.talkon'
 version = '0.1.0'
 
 java {
