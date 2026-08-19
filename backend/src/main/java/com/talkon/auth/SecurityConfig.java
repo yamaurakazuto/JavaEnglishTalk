@@ -26,13 +26,16 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/** SecurityConfigに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Configuration
 public class SecurityConfig {
+  /** password encoderに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   @Bean
   PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 
+  /** usersに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   @Bean
   UserDetailsService users(UserRepository repository) {
     return email ->
@@ -41,30 +44,39 @@ public class SecurityConfig {
             .map(
                 u ->
                     new UserDetails() {
+                      /** get usernameとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
                       public String getUsername() {
                         return u.getEmail();
                       }
 
+                      /** get passwordとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
                       public String getPassword() {
                         return u.getPasswordHash();
                       }
 
+                      /** get authoritiesとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
                       public List<SimpleGrantedAuthority> getAuthorities() {
                         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
                       }
 
+                      /** is account non expiredの条件を満たすか判定します。 条件判断を呼び出し側へ重複させず、一貫した結果を返すために必要です。 */
                       public boolean isAccountNonExpired() {
                         return true;
                       }
 
+                      /** is account non lockedの条件を満たすか判定します。 条件判断を呼び出し側へ重複させず、一貫した結果を返すために必要です。 */
                       public boolean isAccountNonLocked() {
                         return true;
                       }
 
+                      /**
+                       * is credentials non expiredの条件を満たすか判定します。 条件判断を呼び出し側へ重複させず、一貫した結果を返すために必要です。
+                       */
                       public boolean isCredentialsNonExpired() {
                         return true;
                       }
 
+                      /** is enabledの条件を満たすか判定します。 条件判断を呼び出し側へ重複させず、一貫した結果を返すために必要です。 */
                       public boolean isEnabled() {
                         return true;
                       }
@@ -84,6 +96,7 @@ public class SecurityConfig {
     return p;
   }
 
+  /** authentication managerに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   @Bean
   AuthenticationManager authenticationManager(AuthenticationConfiguration c) throws Exception {
     return c.getAuthenticationManager();
@@ -134,6 +147,7 @@ public class SecurityConfig {
         .build();
   }
 
+  /** writeに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static void write(
       HttpServletResponse res, ObjectMapper mapper, int status, String code, String message)
       throws java.io.IOException {

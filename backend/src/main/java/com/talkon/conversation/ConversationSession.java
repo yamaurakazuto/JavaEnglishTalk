@@ -16,6 +16,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
+/** ConversationSessionに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Entity
 @Table(name = "conversation_sessions")
 public class ConversationSession {
@@ -55,8 +56,10 @@ public class ConversationSession {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
+  /** ConversationSessionを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   protected ConversationSession() {}
 
+  /** ConversationSessionを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public ConversationSession(User user) {
     this.user = user;
     this.status = ConversationStatus.ACTIVE;
@@ -68,42 +71,52 @@ public class ConversationSession {
     this.llmCostMicros = 0;
   }
 
+  /** get idとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public Long getId() {
     return id;
   }
 
+  /** get userとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public User getUser() {
     return user;
   }
 
+  /** get statusとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public ConversationStatus getStatus() {
     return status;
   }
 
+  /** get started atとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public Instant getStartedAt() {
     return startedAt;
   }
 
+  /** get finished atとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public Instant getFinishedAt() {
     return finishedAt;
   }
 
+  /** get llm input tokensとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public long getLlmInputTokens() {
     return llmInputTokens;
   }
 
+  /** get llm output tokensとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public long getLlmOutputTokens() {
     return llmOutputTokens;
   }
 
+  /** get llm cost microsとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public long getLlmCostMicros() {
     return llmCostMicros;
   }
 
+  /** get llm modelとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   public String getLlmModel() {
     return llmModel;
   }
 
+  /** add llm usageによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   public void addLlmUsage(int inputTokens, int outputTokens, long costMicros, String model) {
     llmInputTokens += Math.max(0, inputTokens);
     llmOutputTokens += Math.max(0, outputTokens);
@@ -112,6 +125,7 @@ public class ConversationSession {
     updatedAt = Instant.now();
   }
 
+  /** endによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   public void end() {
     status = ConversationStatus.ENDED;
     finishedAt = Instant.now();

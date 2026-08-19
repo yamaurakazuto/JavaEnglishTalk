@@ -4,6 +4,7 @@ package com.talkon.speech;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/** SpeechPropertiesに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @ConfigurationProperties("app.speech")
 public record SpeechProperties(
     String sttModel,

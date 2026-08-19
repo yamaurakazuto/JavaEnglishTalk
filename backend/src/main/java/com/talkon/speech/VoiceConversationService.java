@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+/** VoiceConversationServiceに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Service
 public class VoiceConversationService {
   private static final Logger log = LoggerFactory.getLogger(VoiceConversationService.class);
@@ -26,6 +27,7 @@ public class VoiceConversationService {
   private final TextToSpeechService speech;
   private final SpeechProperties properties;
 
+  /** VoiceConversationServiceを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public VoiceConversationService(
       ConversationService conversations,
       @Qualifier("speechRecognitionService") SpeechRecognitionService recognition,
@@ -37,6 +39,7 @@ public class VoiceConversationService {
     this.properties = properties;
   }
 
+  /** sendに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public VoiceTurnResult send(
       Long conversationId, Long userId, byte[] audio, String contentType, String filename) {
     validate(audio, contentType);
@@ -105,6 +108,7 @@ public class VoiceConversationService {
         warning);
   }
 
+  /** synthesize messageに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   public TextToSpeechService.SpeechAudio synthesizeMessage(
       Long conversationId, Long messageId, Long userId) {
     var conversation = conversations.detail(conversationId, userId);
@@ -122,6 +126,7 @@ public class VoiceConversationService {
     }
   }
 
+  /** validateによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   private void validate(byte[] audio, String contentType) {
     if (audio == null || audio.length < 512) {
       throw new ApiException(
@@ -140,10 +145,12 @@ public class VoiceConversationService {
     }
   }
 
+  /** elapsedに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static long elapsed(Instant started) {
     return Duration.between(started, Instant.now()).toMillis();
   }
 
+  /** log stepに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static void logStep(
       Long userId,
       Long conversationId,
@@ -161,8 +168,10 @@ public class VoiceConversationService {
         model);
   }
 
+  /** ProcessingTimesに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record ProcessingTimes(long sttMs, long llmMs, long ttsMs, long totalMs) {}
 
+  /** VoiceTurnResultに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record VoiceTurnResult(
       String userTranscript,
       ConversationDtos.Detail conversation,

@@ -20,17 +20,20 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** DashboardServiceに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Service
 public class DashboardService {
   private final ConversationSessionRepository sessions;
   private final ConversationMessageRepository messages;
 
+  /** DashboardServiceを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public DashboardService(
       ConversationSessionRepository sessions, ConversationMessageRepository messages) {
     this.sessions = sessions;
     this.messages = messages;
   }
 
+  /** get dashboardとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
   @Transactional(readOnly = true)
   public DashboardResponse getDashboard(Long userId) {
     ZoneId zone = ZoneId.systemDefault();
@@ -79,6 +82,7 @@ public class DashboardService {
     return new DashboardResponse(todaySeconds, streak, studyDays.size(), activeId, activities);
   }
 
+  /** count streakに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private int countStreak(LocalDate today, Set<LocalDate> studyDays) {
     int streak = 0;
     LocalDate date = today;
@@ -89,15 +93,18 @@ public class DashboardService {
     return streak;
   }
 
+  /** levelに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private int level(int sessionCount) {
     return Math.min(4, sessionCount);
   }
 
+  /** DayTotalに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   private static class DayTotal {
     private int sessionCount;
     private long messageCount;
     private long studySeconds;
 
+    /** addによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
     void add(long seconds, long messages) {
       sessionCount++;
       messageCount += messages;

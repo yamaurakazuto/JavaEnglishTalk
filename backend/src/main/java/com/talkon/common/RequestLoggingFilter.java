@@ -14,10 +14,12 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+/** RequestLoggingFilterに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
   private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
 
+  /** do filter internalに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

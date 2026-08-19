@@ -4,7 +4,9 @@ package com.talkon.llm;
 
 import com.talkon.user.EnglishLevel;
 
+/** Promptsに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 public final class Prompts {
+  /** Promptsを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   private Prompts() {}
 
   public static final String CONVERSATION =
@@ -44,6 +46,7 @@ public final class Prompts {
           + " conversation instead of generic praise. Never return a correction when original and"
           + " corrected are equal. Return JSON only.";
 
+  /** level policyに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   public static String levelPolicy(EnglishLevel level) {
     return switch (level) {
       case BEGINNER ->

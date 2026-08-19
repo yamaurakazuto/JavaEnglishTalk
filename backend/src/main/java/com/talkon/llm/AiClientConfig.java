@@ -24,6 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
+/** AiClientConfigに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Configuration
 public class AiClientConfig {
   @Bean
@@ -50,7 +51,9 @@ public class AiClientConfig {
             historyLimit);
   }
 
+  /** LocalAiClientに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   static class LocalAiClient implements ConversationAiClient {
+    /** greetingの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public AiResponse greeting(EnglishLevel level) {
       String text =
           switch (level) {
@@ -62,6 +65,7 @@ public class AiClientConfig {
       return new AiResponse(text, 0, 0, "local-llm");
     }
 
+    /** replyの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public AiResponse reply(List<ConversationMessage> m, EnglishLevel level) {
       long turn = m.stream().filter(x -> x.getRole() == MessageRole.USER).count();
       String latest =
@@ -101,10 +105,12 @@ public class AiClientConfig {
               : "Oh, I see! What do you like most about it?");
     }
 
+    /** local responseに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
     private static AiResponse localResponse(String text) {
       return new AiResponse(text, 0, 0, "local-llm");
     }
 
+    /** translateの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public String translate(String englishText) {
       if (englishText.contains("How are you today")) {
         return "今日は元気ですか？";
@@ -127,6 +133,7 @@ public class AiClientConfig {
       return "なるほど、よく分かります。それは印象に残る出来事ですね。";
     }
 
+    /** translate wordの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public String translateWord(String word, String sentence) {
       return switch (word.toLowerCase()) {
         case "how" -> "どのように";
@@ -139,6 +146,7 @@ public class AiClientConfig {
       };
     }
 
+    /** feedbackの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public FeedbackData feedback(List<ConversationMessage> m) {
       var userMessages =
           m.stream()
@@ -158,6 +166,7 @@ public class AiClientConfig {
               : "伝えたい内容は理解できます。今回の修正を一つ選び、次の会話で使ってみましょう。");
     }
 
+    /** add local correctionsによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
     private static void addLocalCorrections(
         String text, List<FeedbackData.Correction> corrections) {
       String normalized = text.trim().toLowerCase();
@@ -189,6 +198,7 @@ public class AiClientConfig {
     }
   }
 
+  /** OpenAiClientに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   static class OpenAiClient implements ConversationAiClient {
     private static final Logger log = LoggerFactory.getLogger(OpenAiClient.class);
     private final ObjectMapper mapper;
@@ -196,6 +206,7 @@ public class AiClientConfig {
     private final String model;
     private final int historyLimit;
 
+    /** OpenAiClientを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
     OpenAiClient(ObjectMapper m, RestClient h, String model, int historyLimit) {
       mapper = m;
       http = h;
@@ -203,6 +214,7 @@ public class AiClientConfig {
       this.historyLimit = historyLimit;
     }
 
+    /** greetingの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public AiResponse greeting(EnglishLevel level) {
       return chatWithUsage(
           List.of(
@@ -218,6 +230,7 @@ public class AiClientConfig {
                   "Start the conversation with one friendly greeting and question.")));
     }
 
+    /** replyの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public AiResponse reply(List<ConversationMessage> messages, EnglishLevel level) {
       var list = new ArrayList<Map<String, String>>();
       list.add(
@@ -239,6 +252,7 @@ public class AiClientConfig {
       return chatWithUsage(list);
     }
 
+    /** translateの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public String translate(String englishText) {
       return chat(
           List.of(
@@ -246,6 +260,7 @@ public class AiClientConfig {
               Map.of("role", "user", "content", englishText)));
     }
 
+    /** translate wordの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public String translateWord(String word, String sentence) {
       return chat(
           List.of(
@@ -253,6 +268,7 @@ public class AiClientConfig {
               Map.of("role", "user", "content", "Word: " + word + "\nSentence: " + sentence)));
     }
 
+    /** feedbackの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     public FeedbackData feedback(List<ConversationMessage> messages) {
       var transcript =
           messages.stream()
@@ -271,10 +287,12 @@ public class AiClientConfig {
       }
     }
 
+    /** chatに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
     private String chat(List<Map<String, String>> messages) {
       return chatWithUsage(messages).text();
     }
 
+    /** chat with usageに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
     private AiResponse chatWithUsage(List<Map<String, String>> messages) {
       long startedAt = System.nanoTime();
       try {
