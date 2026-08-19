@@ -121,8 +121,8 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 
 ## 6. 作業ファイル
 
-| ファイル                                                                          | 実装内容                   |
-| --------------------------------------------------------------------------------- | -------------------------- |
+| ファイル                                                                   | 実装内容                   |
+| -------------------------------------------------------------------------- | -------------------------- |
 | `backend/src/main/java/com/talkon/TalkOnApplication.java`                  | 設定型scan                 |
 | `backend/src/main/java/com/talkon/common/ApiExceptionHandler.java`         | multipart上限エラーの統一  |
 | `backend/src/main/java/com/talkon/conversation/ConversationAIService.java` | 会話生成Port               |
@@ -137,17 +137,17 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 | `backend/src/main/java/com/talkon/speech/SpeechClientConfig.java`          | OpenAI/Fake adapter        |
 | `backend/src/main/java/com/talkon/speech/VoiceConversationService.java`    | 音声ターン、検証、計測     |
 | `backend/src/main/java/com/talkon/speech/VoiceConversationController.java` | multipart・音声API         |
-| `backend/src/main/resources/application.yml`                                      | モデル・上限設定           |
-| `backend/src/test/resources/application.yml`                                      | 非課金test設定             |
+| `backend/src/main/resources/application.yml`                               | モデル・上限設定           |
+| `backend/src/test/resources/application.yml`                               | 非課金test設定             |
 | `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`        | 音声結合テスト             |
 | `backend/src/test/java/com/talkon/VoiceConversationServiceTest.java`       | TTS部分失敗テスト          |
-| `frontend/src/shared/api.ts`                                                      | multipart・音声取得・型    |
-| `frontend/src/features/conversation/VoiceRecorder.tsx`                            | 録音・認識表示・再生       |
-| `frontend/src/features/conversation/MessageList.tsx`                              | AI音声ボタン               |
-| `frontend/src/App.tsx`                                                            | 録音UI統合                 |
-| `frontend/src/styles.css`                                                         | 音声UI                     |
-| `docs/MVPフェーズ2実装書.md`                                                      | 本記録                     |
-| `docs/CODE_READING_GUIDE.md`                                                      | 音声コードの追い方         |
+| `frontend/src/shared/api.ts`                                               | multipart・音声取得・型    |
+| `frontend/src/features/conversation/VoiceRecorder.tsx`                     | 録音・認識表示・再生       |
+| `frontend/src/features/conversation/MessageList.tsx`                       | AI音声ボタン               |
+| `frontend/src/App.tsx`                                                     | 録音UI統合                 |
+| `frontend/src/styles.css`                                                  | 音声UI                     |
+| `docs/MVPフェーズ2実装書.md`                                               | 本記録                     |
+| `docs/CODE_READING_GUIDE.md`                                               | 音声コードの追い方         |
 
 ## 7. テスト、未解決事項、次候補
 

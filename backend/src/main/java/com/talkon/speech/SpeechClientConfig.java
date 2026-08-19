@@ -17,6 +17,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestClient;
 
+/** SpeechClientConfigに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Configuration
 public class SpeechClientConfig {
   @Bean
@@ -43,6 +44,7 @@ public class SpeechClientConfig {
     return new OpenAiSpeechClient(apiKey, baseUrl, properties);
   }
 
+  /** silent wavに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static byte[] silentWav() {
     int sampleRate = 16_000;
     int dataLength = sampleRate / 4 * 2;
@@ -57,10 +59,12 @@ public class SpeechClientConfig {
     return wav.array();
   }
 
+  /** OpenAiSpeechClientに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   static class OpenAiSpeechClient implements SpeechRecognitionService, TextToSpeechService {
     private final RestClient http;
     private final SpeechProperties properties;
 
+    /** OpenAiSpeechClientを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
     OpenAiSpeechClient(String apiKey, String baseUrl, SpeechProperties properties) {
       var requestFactory = new SimpleClientHttpRequestFactory();
       requestFactory.setConnectTimeout(Duration.ofSeconds(properties.timeoutSeconds()));
@@ -74,6 +78,7 @@ public class SpeechClientConfig {
       this.properties = properties;
     }
 
+    /** transcribeの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     @Override
     public Transcription transcribe(byte[] audio, String contentType, String filename) {
       var body = new LinkedMultiValueMap<String, Object>();
@@ -96,6 +101,7 @@ public class SpeechClientConfig {
       return new Transcription(text, properties.sttModel(), audio.length);
     }
 
+    /** synthesizeの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
     @Override
     public SpeechAudio synthesize(String text) {
       byte[] audio =
@@ -119,6 +125,7 @@ public class SpeechClientConfig {
       return new SpeechAudio(audio, mediaType(properties.format()), properties.ttsModel());
     }
 
+    /** retryによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
     private <T> T retry(java.util.function.Supplier<T> call) {
       RuntimeException last = null;
       for (int attempt = 0; attempt <= properties.retryCount(); attempt++) {
@@ -131,8 +138,10 @@ public class SpeechClientConfig {
       throw last == null ? new IllegalStateException("Speech API failed") : last;
     }
 
+    /** named resourceに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
     private static ByteArrayResource namedResource(byte[] audio, String filename) {
       return new ByteArrayResource(audio) {
+        /** get filenameとして保持している値を返します。 呼び出し側が内部状態を直接変更せず、安全に参照するために必要です。 */
         @Override
         public String getFilename() {
           return filename == null || filename.isBlank() ? "recording.webm" : filename;
@@ -140,6 +149,7 @@ public class SpeechClientConfig {
       };
     }
 
+    /** media typeに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
     private static String mediaType(String format) {
       return switch (format) {
         case "wav" -> "audio/wav";

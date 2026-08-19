@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
+/** FeedbackDataに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 public record FeedbackData(
     @NotBlank String summary,
     @NotNull @Size(min = 1, max = 5) List<@NotBlank String> strengths,
@@ -24,6 +25,7 @@ public record FeedbackData(
                 .toList();
   }
 
+  /** Correctionに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record Correction(
       @NotBlank String original,
       @NotBlank String corrected,

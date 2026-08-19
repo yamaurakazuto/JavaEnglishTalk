@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/** FeedbackGenerationServiceに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Service
 public class FeedbackGenerationService {
   private static final Logger log = LoggerFactory.getLogger(FeedbackGenerationService.class);
@@ -25,6 +26,7 @@ public class FeedbackGenerationService {
   private final Validator validator;
   private final TransactionTemplate tx;
 
+  /** FeedbackGenerationServiceを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public FeedbackGenerationService(
       ConversationMessageRepository messages,
       ConversationFeedbackRepository feedbacks,
@@ -40,6 +42,7 @@ public class FeedbackGenerationService {
     this.tx = tx;
   }
 
+  /** generateの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
   @Async
   public void generate(Long conversationId, Long userId) {
     Instant startedAt = Instant.now();
@@ -66,6 +69,7 @@ public class FeedbackGenerationService {
     }
   }
 
+  /** create feedbackに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private FeedbackData createFeedback(Long conversationId) {
     for (int attempt = 1; attempt <= 2; attempt++) {
       try {

@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/** AuthControllerに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -36,22 +37,27 @@ public class AuthController {
   private final PasswordEncoder encoder;
   private final AuthenticationManager manager;
 
+  /** AuthControllerを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public AuthController(UserRepository u, PasswordEncoder e, AuthenticationManager m) {
     users = u;
     encoder = e;
     manager = m;
   }
 
+  /** RegisterRequestに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record RegisterRequest(
       @NotBlank @Size(max = 50) String displayName,
       @NotBlank @Email @Size(max = 255) String email,
       @NotBlank @Size(min = 8, max = 72) String password) {}
 
+  /** LoginRequestに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record LoginRequest(@NotBlank @Email String email, @NotBlank String password) {}
 
+  /** UserResponseに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record UserResponse(
       Long id, String displayName, String email, EnglishLevel englishLevel) {}
 
+  /** registerに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
   @Transactional
@@ -67,6 +73,7 @@ public class AuthController {
     return response(users.save(new User(name, email, encoder.encode(r.password()))));
   }
 
+  /** loginに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   @PostMapping("/login")
   public UserResponse login(
       @Valid @RequestBody LoginRequest r, HttpServletRequest req, HttpServletResponse res) {
@@ -92,6 +99,7 @@ public class AuthController {
     }
   }
 
+  /** logoutに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   @PostMapping("/logout")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void logout(HttpServletRequest req, HttpServletResponse res) {
@@ -107,12 +115,14 @@ public class AuthController {
     res.addCookie(cookie);
   }
 
+  /** meに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   @GetMapping("/me")
   public UserResponse me(Authentication a) {
     var p = CurrentUser.require(a);
     return response(users.findById(p.id()).orElseThrow());
   }
 
+  /** responseに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static UserResponse response(User u) {
     return new UserResponse(u.getId(), u.getDisplayName(), u.getEmail(), u.getEnglishLevel());
   }

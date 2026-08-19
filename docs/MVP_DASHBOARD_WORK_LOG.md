@@ -54,22 +54,22 @@ Java側もController、Service、Responseに分け、HTTP受付、集計処理�
 
 今回のダッシュボード実装で作業したファイルは次の通りです。
 
-| 種別 | ファイル名                                                                                | 作業内容                                       |
-| ---- | ----------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 種別 | ファイル名                                                                         | 作業内容                                       |
+| ---- | ---------------------------------------------------------------------------------- | ---------------------------------------------- |
 | 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
 | 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
 | 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
 | 変更 | `backend/src/main/java/com/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
 | 変更 | `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
-| 変更 | `backend/src/main/resources/db/migration/V1__initial_schema.sql`                          | Flywayチェックサム維持のため先頭コメントを除去 |
-| 新規 | `frontend/src/features/dashboard/DashboardPage.tsx`                                       | ダッシュボード画面全体と画面遷移の実装         |
-| 新規 | `frontend/src/features/dashboard/StudySummary.tsx`                                        | 今日の学習時間と学習日数の表示                 |
-| 新規 | `frontend/src/features/dashboard/ActivityGrid.tsx`                                        | GitHubの草風学習カレンダーの表示               |
-| 新規 | `frontend/src/features/dashboard/DashboardPage.test.tsx`                                  | ダッシュボード画面のテスト                     |
-| 変更 | `frontend/src/shared/api.ts`                                                              | ダッシュボード用の型とAPI呼び出しを追加        |
-| 変更 | `frontend/src/App.tsx`                                                                    | ログイン後のトップ画面をダッシュボードへ変更   |
-| 変更 | `frontend/src/styles.css`                                                                 | ダッシュボードとモバイル表示のスタイル追加     |
-| 新規 | `docs/MVP_DASHBOARD_WORK_LOG.md`                                                          | 実装内容と判断理由を記録する本作業書           |
+| 変更 | `backend/src/main/resources/db/migration/V1__initial_schema.sql`                   | Flywayチェックサム維持のため先頭コメントを除去 |
+| 新規 | `frontend/src/features/dashboard/DashboardPage.tsx`                                | ダッシュボード画面全体と画面遷移の実装         |
+| 新規 | `frontend/src/features/dashboard/StudySummary.tsx`                                 | 今日の学習時間と学習日数の表示                 |
+| 新規 | `frontend/src/features/dashboard/ActivityGrid.tsx`                                 | GitHubの草風学習カレンダーの表示               |
+| 新規 | `frontend/src/features/dashboard/DashboardPage.test.tsx`                           | ダッシュボード画面のテスト                     |
+| 変更 | `frontend/src/shared/api.ts`                                                       | ダッシュボード用の型とAPI呼び出しを追加        |
+| 変更 | `frontend/src/App.tsx`                                                             | ログイン後のトップ画面をダッシュボードへ変更   |
+| 変更 | `frontend/src/styles.css`                                                          | ダッシュボードとモバイル表示のスタイル追加     |
+| 新規 | `docs/MVP_DASHBOARD_WORK_LOG.md`                                                   | 実装内容と判断理由を記録する本作業書           |
 
 ## 4. バックエンドへ追加・変更したもの
 

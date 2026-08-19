@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+/** ConversationServiceに関する責務をまとめるクラスです。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
 @Service
 public class ConversationService {
   private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
@@ -38,6 +39,7 @@ public class ConversationService {
   private final FeedbackGenerationService feedbackGenerator;
   private final TransactionTemplate tx;
 
+  /** ConversationServiceを利用可能な状態で生成します。 必要な依存関係や初期値を生成時にそろえ、不完全な状態を防ぐために必要です。 */
   public ConversationService(
       ConversationSessionRepository s,
       ConversationMessageRepository m,
@@ -61,6 +63,7 @@ public class ConversationService {
     this.tx = tx;
   }
 
+  /** startに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public StartResult start(Long userId) {
     var existing =
         sessions.findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, ConversationStatus.ACTIVE);
@@ -92,6 +95,7 @@ public class ConversationService {
     return new StartResult(detail(created.session(), userId), created.created());
   }
 
+  /** activeに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public ConversationDtos.Detail active(Long userId) {
     return sessions
         .findFirstByUserIdAndStatusOrderByStartedAtDesc(userId, ConversationStatus.ACTIVE)
@@ -99,10 +103,12 @@ public class ConversationService {
         .orElse(null);
   }
 
+  /** detailに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public ConversationDtos.Detail detail(Long id, Long userId) {
     return detail(owned(id, userId), userId);
   }
 
+  /** detailに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   private ConversationDtos.Detail detail(ConversationSession s, Long userId) {
     var ms =
         messages.findBySessionIdOrderBySequenceNo(s.getId()).stream()
@@ -124,6 +130,7 @@ public class ConversationService {
             s.getLlmInputTokens(), s.getLlmOutputTokens(), s.getLlmCostMicros(), s.getLlmModel()));
   }
 
+  /** sendに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public ConversationDtos.Detail send(Long id, Long userId, String raw) {
     Instant startedAt = Instant.now();
     var content = raw == null ? "" : raw.trim();
@@ -167,6 +174,7 @@ public class ConversationService {
     return detail(id, userId);
   }
 
+  /** finishに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public ConversationDtos.Detail finish(Long id, Long userId) {
     Instant startedAt = Instant.now();
     tx.executeWithoutResult(
@@ -191,6 +199,7 @@ public class ConversationService {
     return detail(id, userId);
   }
 
+  /** retry feedbackによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   public ConversationDtos.Detail retryFeedback(Long id, Long userId) {
     tx.executeWithoutResult(
         ignored -> {
@@ -206,6 +215,7 @@ public class ConversationService {
     return detail(id, userId);
   }
 
+  /** translateの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
   public ConversationDtos.MessageResponse translate(
       Long conversationId, Long messageId, Long userId) {
     owned(conversationId, userId);
@@ -236,6 +246,7 @@ public class ConversationService {
         messages.findByIdAndSessionId(messageId, conversationId).orElseThrow());
   }
 
+  /** translate wordの外部サービスまたは代替処理を実行します。 AI・音声機能の詳細を呼び出し側から分離し、実装を交換可能にするために必要です。 */
   public ConversationDtos.WordTranslationResponse translateWord(
       Long conversationId, Long messageId, Long userId, String requestedWord) {
     owned(conversationId, userId);
@@ -262,6 +273,7 @@ public class ConversationService {
     }
   }
 
+  /** historyに対応する処理を実行します。 画面やHTTPリクエストから対象のユースケースを安全に利用できるようにするために必要です。 */
   public ConversationDtos.PageResponse history(Long userId, int page, int size) {
     var safePage = Math.max(0, page);
     var safeSize = Math.max(1, Math.min(50, size));
@@ -277,22 +289,26 @@ public class ConversationService {
         content, p.getNumber(), p.getSize(), p.getTotalElements(), p.getTotalPages());
   }
 
+  /** ownedに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private ConversationSession owned(Long id, Long userId) {
     return sessions
         .findByIdAndUserId(id, userId)
         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "会話が見つかりません。"));
   }
 
+  /** lockedに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private ConversationSession locked(Long id, Long userId) {
     return sessions
         .lockOwned(id, userId)
         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", "会話が見つかりません。"));
   }
 
+  /** conflictに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static ApiException conflict(String m) {
     return new ApiException(HttpStatus.CONFLICT, "CONFLICT", m);
   }
 
+  /** contains wordに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private static boolean containsWord(String sentence, String requestedWord) {
     var matcher = ENGLISH_WORD.matcher(sentence);
     while (matcher.find()) {
@@ -303,11 +319,13 @@ public class ConversationService {
     return false;
   }
 
+  /** llmに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
   private static ApiException llm() {
     return new ApiException(
         HttpStatus.SERVICE_UNAVAILABLE, "LLM_UNAVAILABLE", "AIサービスを利用できません。しばらくしてから再試行してください。");
   }
 
+  /** levelに必要な検索または判定結果を返します。 業務ルールを再利用し、呼び出し元ごとの判定差を防ぐために必要です。 */
   private EnglishLevel level(Long userId) {
     var level = users.findById(userId).orElseThrow().getEnglishLevel();
     if (level == null) {
@@ -316,6 +334,7 @@ public class ConversationService {
     return level;
   }
 
+  /** record usageによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   private void recordUsage(ConversationSession session, ConversationAIService.AiResponse response) {
     session.addLlmUsage(
         response.inputTokens(),
@@ -324,9 +343,11 @@ public class ConversationService {
         response.model());
   }
 
+  /** run after commitによって対象の状態や処理を更新します。 状態変更のルールを一箇所に集約し、不整合を防ぐために必要です。 */
   private void runAfterCommit(Runnable action) {
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
+          /** after commitに関する処理を実行します。 このクラスの責務を一箇所へ保ち、呼び出し側の処理を単純にするために必要です。 */
           @Override
           public void afterCommit() {
             action.run();
@@ -334,7 +355,9 @@ public class ConversationService {
         });
   }
 
+  /** StartResultに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   public record StartResult(ConversationDtos.Detail detail, boolean created) {}
 
+  /** Createdに関する責務をまとめるデータ構造です。 関連する処理やデータの役割を一箇所へ集約し、呼び出し側との境界を明確にするために必要です。 */
   private record Created(ConversationSession session, boolean created) {}
 }
