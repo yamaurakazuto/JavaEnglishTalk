@@ -4,13 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "setup": "npm install --prefix frontend",
-    "dev": "node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -k -n backend,frontend -c blue,green \"./gradlew :backend:bootRun\" \"npm run dev --prefix frontend\"",
-    "test": "./gradlew :backend:test && npm test --prefix frontend",
+    "dev": "node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -k -n backend,speech,frontend -c blue,magenta,green \"./gradlew :backend:bootRun\" \"./gradlew :speech-service:bootRun\" \"npm run dev --prefix frontend\"",
+    "test": "./gradlew :backend:test :speech-service:test && npm test --prefix frontend",
     "typecheck": "npm run typecheck --prefix frontend",
     "lint": "npm run lint --prefix frontend",
-    "format": "./gradlew :backend:spotlessApply && prettier --write \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\"",
-    "format:check": "./gradlew :backend:spotlessCheck && prettier --check \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\"",
-    "build": "./gradlew :backend:bootJar && npm run build --prefix frontend"
+    "format": "./gradlew :backend:spotlessApply :speech-service:spotlessApply && prettier --write \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\" \"speech-service/src/**/*.yml\"",
+    "format:check": "./gradlew :backend:spotlessCheck :speech-service:spotlessCheck && prettier --check \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\" \"speech-service/src/**/*.yml\"",
+    "build": "./gradlew :backend:bootJar :speech-service:bootJar && npm run build --prefix frontend"
   },
   "devDependencies": {
     "concurrently": "9.2.0",

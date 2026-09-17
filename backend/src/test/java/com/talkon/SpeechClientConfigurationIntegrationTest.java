@@ -9,7 +9,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties = "app.llm.api-key=test-api-key")
+@SpringBootTest(
+    properties = {
+      "app.speech-service.base-url=http://localhost:18081",
+      "app.speech-service.internal-key=test-key"
+    })
 class SpeechClientConfigurationIntegrationTest {
   @Autowired VoiceConversationService voiceConversationService;
 

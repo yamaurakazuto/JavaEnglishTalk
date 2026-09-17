@@ -22,8 +22,7 @@ class VoiceConversationServiceTest {
     var conversations = mock(ConversationService.class);
     var recognition = mock(SpeechRecognitionService.class);
     var speech = mock(TextToSpeechService.class);
-    var properties =
-        new SpeechProperties("stt-model", "tts-model", "coral", 1.0, "mp3", 30, 1, 5_242_880, 60);
+    var properties = new SpeechProperties(5_242_880, 60);
     var detail =
         new ConversationDtos.Detail(
             1L,
