@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.diffplug.spotless'
+}
+
+group = 'com.talkon'
+version = '0.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+spotless {
+    java {
+        googleJavaFormat('1.25.2')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

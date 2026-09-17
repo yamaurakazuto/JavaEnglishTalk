@@ -1,0 +1,22 @@
+# 音声マイクロサービスの実行環境を設定します。モデル設定と内部認証を会話Backendから分離します。
+
+server:
+  port: ${SPEECH_SERVICE_PORT:8081}
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+app:
+  internal-key: ${INTERNAL_SERVICE_KEY:local-dev-key}
+  openai:
+    api-key: ${OPENAI_API_KEY:}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  speech:
+    stt-model: ${OPENAI_STT_MODEL:gpt-4o-mini-transcribe}
+    tts-model: ${OPENAI_TTS_MODEL:gpt-4o-mini-tts}
+    voice: ${OPENAI_TTS_VOICE:coral}
+    speed: ${OPENAI_TTS_SPEED:1.0}
+    format: ${OPENAI_TTS_FORMAT:mp3}
+    timeout-seconds: ${SPEECH_TIMEOUT_SECONDS:30}
+    retry-count: ${SPEECH_RETRY_COUNT:1}

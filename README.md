@@ -4,7 +4,7 @@
 
 TalkOnは、AIとの英会話、音声入力、読み上げ、翻訳、フィードバック、学習記録を一つにまとめた英語学習アプリです。
 
-現在はMVPフェーズ2まで実装済みです。JavaとTypeScript／Reactで構成されたモノリスとして、ローカル環境で動作します。
+現在はMVPフェーズ2まで実装済みです。モノリスからマイクロサービスへ段階移行中で、Core Backendと音声サービスを独立したSpring Bootプロセスとしてローカル実行します。
 
 ## 主な機能
 
@@ -40,12 +40,13 @@ EnglishTalkapp/
 │   ├── src/main/       Javaコード、設定、DBマイグレーション
 │   ├── src/test/       バックエンドテスト
 │   └── data/           ローカルH2データベース
+├── speech-service/     STT・TTSを担当する音声マイクロサービス
 ├── frontend/           Reactフロントエンド
 │   ├── src/            画面、機能、APIクライアント
 │   └── e2e/            E2Eテスト
 ├── docs/               設計書、実装書、コードリーディング資料
 ├── .env.example        ローカル環境変数の見本
-└── package.json        モノリス全体の実行コマンド
+└── package.json        全サービスの実行コマンド
 ```
 
 ## 必要なもの
@@ -133,12 +134,13 @@ LOCAL_AUTO_LOGIN=false
 npm run dev
 ```
 
-バックエンドとフロントエンドが同時に起動します。
+Core Backend、音声サービス、フロントエンドが同時に起動します。
 
 | 対象            | URL                                           |
 | --------------- | --------------------------------------------- |
 | TalkOn          | <http://localhost:5173>                       |
 | バックエンドAPI | <http://localhost:8080>                       |
+| 音声サービス    | <http://localhost:8081>（内部API）            |
 | Swagger UI      | <http://localhost:8080/swagger-ui/index.html> |
 
 停止するときは、起動したターミナルで`Ctrl + C`を押します。
@@ -175,15 +177,15 @@ TalkOnでは、次の処理でOpenAI API料金が発生します。
 
 ## 開発コマンド
 
-| コマンド               | 内容                                       |
-| ---------------------- | ------------------------------------------ |
-| `npm run dev`          | バックエンドとフロントエンドを同時起動     |
-| `npm test`             | バックエンドとフロントエンドのテストを実行 |
-| `npm run typecheck`    | TypeScriptの型チェックを実行               |
-| `npm run lint`         | フロントエンドのLintを実行                 |
-| `npm run format`       | Java、TypeScript、CSS、Markdownなどを整形  |
-| `npm run format:check` | コード整形状態を確認                       |
-| `npm run build`        | バックエンドとフロントエンドをビルド       |
+| コマンド               | 内容                                      |
+| ---------------------- | ----------------------------------------- |
+| `npm run dev`          | 両BackendサービスとFrontendを同時起動     |
+| `npm test`             | 両BackendサービスとFrontendのテストを実行 |
+| `npm run typecheck`    | TypeScriptの型チェックを実行              |
+| `npm run lint`         | フロントエンドのLintを実行                |
+| `npm run format`       | Java、TypeScript、CSS、Markdownなどを整形 |
+| `npm run format:check` | コード整形状態を確認                      |
+| `npm run build`        | 全サービスとFrontendをビルド              |
 
 ## テスト
 
@@ -196,7 +198,7 @@ npm test
 個別に確認する場合は次のコマンドを使用します。
 
 ```bash
-./gradlew :backend:test
+./gradlew :backend:test :speech-service:test
 npm test --prefix frontend
 npm run typecheck
 npm run lint
@@ -204,16 +206,17 @@ npm run lint
 
 ## ドキュメント
 
-| ファイル                                                     | 内容                               |
-| ------------------------------------------------------------ | ---------------------------------- |
-| [画面状態・イベント追跡手順書](docs/UI_EVENT_STATE_GUIDE.md) | 各画面の状態・操作・保存先の対応表 |
-| [コードリーディングガイド](docs/CODE_READING_GUIDE.md)       | イベントから処理を追うための案内   |
-| [システム設計書](docs/SYSTEM_DESIGN.md)                      | 全体構成と設計方針                 |
-| [開発ガイド](docs/DEVELOPMENT.md)                            | 開発環境と作業方法                 |
-| [MVPフェーズ2実装書](docs/MVPフェーズ2実装書.md)             | フェーズ2で実装した内容            |
-| [MVPフェーズ2移行書](docs/MVPフェーズ2移行書.md)             | フェーズ2への移行内容              |
-| [ダッシュボード作業記録](docs/MVP_DASHBOARD_WORK_LOG.md)     | ダッシュボードの設計・実装記録     |
-| [OpenAI API料金ガイド](docs/OPENAI_API_COST_GUIDE.md)        | 料金構造と月額目安                 |
+| ファイル                                                     | 内容                                     |
+| ------------------------------------------------------------ | ---------------------------------------- |
+| [画面状態・イベント追跡手順書](docs/UI_EVENT_STATE_GUIDE.md) | 各画面の状態・操作・保存先の対応表       |
+| [マイクロサービス設計書](docs/MICROSERVICES_ARCHITECTURE.md) | サービス境界、通信、データ所有、移行計画 |
+| [コードリーディングガイド](docs/CODE_READING_GUIDE.md)       | イベントから処理を追うための案内         |
+| [システム設計書](docs/SYSTEM_DESIGN.md)                      | 全体構成と設計方針                       |
+| [開発ガイド](docs/DEVELOPMENT.md)                            | 開発環境と作業方法                       |
+| [MVPフェーズ2実装書](docs/MVPフェーズ2実装書.md)             | フェーズ2で実装した内容                  |
+| [MVPフェーズ2移行書](docs/MVPフェーズ2移行書.md)             | フェーズ2への移行内容                    |
+| [ダッシュボード作業記録](docs/MVP_DASHBOARD_WORK_LOG.md)     | ダッシュボードの設計・実装記録           |
+| [OpenAI API料金ガイド](docs/OPENAI_API_COST_GUIDE.md)        | 料金構造と月額目安                       |
 
 ## 現在の位置づけ
 

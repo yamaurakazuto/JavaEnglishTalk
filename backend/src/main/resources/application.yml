@@ -40,12 +40,9 @@ app:
     output-usd-per-million: ${LLM_OUTPUT_USD_PER_MILLION:1.60}
     yen-per-usd: ${LLM_YEN_PER_USD:160}
   speech:
-    stt-model: ${OPENAI_STT_MODEL:gpt-4o-mini-transcribe}
-    tts-model: ${OPENAI_TTS_MODEL:gpt-4o-mini-tts}
-    voice: ${OPENAI_TTS_VOICE:coral}
-    speed: ${OPENAI_TTS_SPEED:1.0}
-    format: ${OPENAI_TTS_FORMAT:mp3}
-    timeout-seconds: ${SPEECH_TIMEOUT_SECONDS:30}
-    retry-count: ${SPEECH_RETRY_COUNT:1}
     max-bytes: ${SPEECH_MAX_BYTES:5242880}
     max-recording-seconds: ${SPEECH_MAX_RECORDING_SECONDS:60}
+  speech-service:
+    base-url: ${SPEECH_SERVICE_URL:http://localhost:8081}
+    internal-key: ${INTERNAL_SERVICE_KEY:local-dev-key}
+    timeout-seconds: ${SPEECH_TIMEOUT_SECONDS:30}

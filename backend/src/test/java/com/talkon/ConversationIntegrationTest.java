@@ -2,6 +2,9 @@
 
 package com.talkon;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,6 +18,8 @@ import com.talkon.auth.TalkOnPrincipal;
 import com.talkon.conversation.ConversationMessageRepository;
 import com.talkon.conversation.ConversationSessionRepository;
 import com.talkon.feedback.ConversationFeedbackRepository;
+import com.talkon.speech.SpeechRecognitionService;
+import com.talkon.speech.TextToSpeechService;
 import com.talkon.user.EnglishLevel;
 import com.talkon.user.User;
 import com.talkon.user.UserRepository;
@@ -24,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,11 +47,20 @@ class ConversationIntegrationTest {
   @Autowired ConversationMessageRepository messages;
   @Autowired ConversationSessionRepository sessions;
   @Autowired PasswordEncoder encoder;
+  @MockBean SpeechRecognitionService speechRecognition;
+  @MockBean TextToSpeechService textToSpeech;
   User owner;
   User other;
 
   @BeforeEach
   void setup() {
+    when(speechRecognition.transcribe(any(), any(), any()))
+        .thenReturn(
+            new SpeechRecognitionService.Transcription(
+                "I like practicing English with TalkOn.", "test-stt", 1_024));
+    when(textToSpeech.synthesize(anyString()))
+        .thenReturn(
+            new TextToSpeechService.SpeechAudio(new byte[] {1, 2, 3}, "audio/wav", "test-tts"));
     feedbacks.deleteAll();
     messages.deleteAll();
     sessions.deleteAll();

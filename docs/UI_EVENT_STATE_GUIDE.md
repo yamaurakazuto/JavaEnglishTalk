@@ -115,7 +115,7 @@ AI会話内容は `ConversationAIService.java`、実際のAIクライアント�
 | AI音声自動再生   | `playReturnedAudio()`                    | レスポンス内Base64 | なし                                      | `audioUrl` を作成。失敗時は `warning` を表示                   |
 | 録音画面を離れる | `VoiceRecorder` のcleanup                | なし               | なし                                      | マイク、timer、Object URLを解放                                |
 
-STTは `SpeechRecognitionService.java`、TTSは `TextToSpeechService.java`、OpenAIとの通信実装は `SpeechClientConfig.java`、サイズ等の設定は `SpeechProperties.java` と `application.yml` を確認する。
+Backend側のSTT/TTS境界は `SpeechRecognitionService.java` と `TextToSpeechService.java`、内部HTTP Clientは `RemoteSpeechClientConfig.java` を確認する。OpenAIとの通信実装は `speech-service/src/main/java/com/talkon/speechservice/SpeechProviderConfig.java`、内部APIは同ディレクトリの `SpeechController.java` にある。
 
 ### 3.6 Feedback
 
@@ -215,7 +215,7 @@ DB定義は `backend/src/main/resources/db/migration/` のMigrationを番号順�
 変更後の基本確認:
 
 ```bash
-./gradlew :backend:test :backend:spotlessCheck
+./gradlew :backend:test :speech-service:test :backend:spotlessCheck :speech-service:spotlessCheck
 npm test --prefix frontend
 npm run typecheck --prefix frontend
 npm run lint --prefix frontend

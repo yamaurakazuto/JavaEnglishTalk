@@ -11,7 +11,7 @@
 3. `VoiceConversationController` が認証ユーザーと音声を受け取る。
 4. `VoiceConversationService` が入力検証とSTT → LLM → TTSを調整する。
 5. `SpeechRecognitionService` と `TextToSpeechService` が外部APIとの境界になる。
-6. `SpeechClientConfig.OpenAiSpeechClient` だけがOpenAIのURLとrequest形式を知る。
+6. Backendの `RemoteSpeechClientConfig` が内部HTTPを呼び、`speech-service` の `SpeechProviderConfig.OpenAiSpeechProvider` だけがOpenAIのURLとrequest形式を知る。
 7. LLMは既存 `ConversationService.send` を通り、音声文字起こしも通常メッセージと同じ順で保存される。
 8. TTS失敗時は `VoiceTurnResult.warning` を返し、ReactはAI英文を残す。
 
@@ -296,7 +296,7 @@ rg -n "OPENAI_|CORS_ORIGIN|COOKIE_SECURE|VITE_API_URL" .
 ## 12. 変更後の最小確認
 
 ```bash
-./gradlew :backend:test :backend:spotlessCheck
+./gradlew :backend:test :speech-service:test :backend:spotlessCheck :speech-service:spotlessCheck
 npm test --prefix frontend
 npm run typecheck --prefix frontend
 npm run lint --prefix frontend
