@@ -121,33 +121,33 @@ POST /api/conversations/{conversationId}/messages/{messageId}/speech
 
 ## 6. 作業ファイル
 
-| ファイル                                                                   | 実装内容                   |
-| -------------------------------------------------------------------------- | -------------------------- |
-| `backend/src/main/java/com/talkon/TalkOnApplication.java`                  | 設定型scan                 |
-| `backend/src/main/java/com/talkon/common/ApiExceptionHandler.java`         | multipart上限エラーの統一  |
-| `backend/src/main/java/com/talkon/conversation/ConversationAIService.java` | 会話生成Port               |
-| `backend/src/main/java/com/talkon/conversation/TranslationService.java`    | 翻訳専用Port               |
-| `backend/src/main/java/com/talkon/conversation/ConversationService.java`   | Portへの依存               |
-| `backend/src/main/java/com/talkon/llm/ConversationAiClient.java`           | adapter契約                |
-| `backend/src/main/java/com/talkon/llm/AiClientConfig.java`                 | 履歴上限、token、model計測 |
-| `backend/src/main/java/com/talkon/llm/Prompts.java`                        | 会話品質規則               |
-| `backend/src/main/java/com/talkon/speech/SpeechRecognitionService.java`    | STT Port                   |
-| `backend/src/main/java/com/talkon/speech/TextToSpeechService.java`         | TTS Port                   |
-| `backend/src/main/java/com/talkon/speech/SpeechProperties.java`            | 音声設定                   |
-| `backend/src/main/java/com/talkon/speech/SpeechClientConfig.java`          | OpenAI/Fake adapter        |
-| `backend/src/main/java/com/talkon/speech/VoiceConversationService.java`    | 音声ターン、検証、計測     |
-| `backend/src/main/java/com/talkon/speech/VoiceConversationController.java` | multipart・音声API         |
-| `backend/src/main/resources/application.yml`                               | モデル・上限設定           |
-| `backend/src/test/resources/application.yml`                               | 非課金test設定             |
-| `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`        | 音声結合テスト             |
-| `backend/src/test/java/com/talkon/VoiceConversationServiceTest.java`       | TTS部分失敗テスト          |
-| `frontend/src/shared/api.ts`                                               | multipart・音声取得・型    |
-| `frontend/src/features/conversation/VoiceRecorder.tsx`                     | 録音・認識表示・再生       |
-| `frontend/src/features/conversation/MessageList.tsx`                       | AI音声ボタン               |
-| `frontend/src/App.tsx`                                                     | 録音UI統合                 |
-| `frontend/src/styles.css`                                                  | 音声UI                     |
-| `docs/MVPフェーズ2実装書.md`                                               | 本記録                     |
-| `docs/CODE_READING_GUIDE.md`                                               | 音声コードの追い方         |
+| ファイル                                                                             | 実装内容                   |
+| ------------------------------------------------------------------------------------ | -------------------------- |
+| `services/core-api/src/main/java/com/talkon/TalkOnApplication.java`                  | 設定型scan                 |
+| `services/core-api/src/main/java/com/talkon/common/ApiExceptionHandler.java`         | multipart上限エラーの統一  |
+| `services/core-api/src/main/java/com/talkon/conversation/ConversationAIService.java` | 会話生成Port               |
+| `services/core-api/src/main/java/com/talkon/conversation/TranslationService.java`    | 翻訳専用Port               |
+| `services/core-api/src/main/java/com/talkon/conversation/ConversationService.java`   | Portへの依存               |
+| `services/core-api/src/main/java/com/talkon/llm/ConversationAiClient.java`           | adapter契約                |
+| `services/core-api/src/main/java/com/talkon/llm/AiClientConfig.java`                 | 履歴上限、token、model計測 |
+| `services/core-api/src/main/java/com/talkon/llm/Prompts.java`                        | 会話品質規則               |
+| `services/core-api/src/main/java/com/talkon/speech/SpeechRecognitionService.java`    | STT Port                   |
+| `services/core-api/src/main/java/com/talkon/speech/TextToSpeechService.java`         | TTS Port                   |
+| `services/core-api/src/main/java/com/talkon/speech/SpeechProperties.java`            | 音声設定                   |
+| `services/core-api/src/main/java/com/talkon/speech/SpeechClientConfig.java`          | OpenAI/Fake adapter        |
+| `services/core-api/src/main/java/com/talkon/speech/VoiceConversationService.java`    | 音声ターン、検証、計測     |
+| `services/core-api/src/main/java/com/talkon/speech/VoiceConversationController.java` | multipart・音声API         |
+| `services/core-api/src/main/resources/application.yml`                               | モデル・上限設定           |
+| `services/core-api/src/test/resources/application.yml`                               | 非課金test設定             |
+| `services/core-api/src/test/java/com/talkon/ConversationIntegrationTest.java`        | 音声結合テスト             |
+| `services/core-api/src/test/java/com/talkon/VoiceConversationServiceTest.java`       | TTS部分失敗テスト          |
+| `apps/web/src/shared/api.ts`                                                         | multipart・音声取得・型    |
+| `apps/web/src/features/conversation/VoiceRecorder.tsx`                               | 録音・認識表示・再生       |
+| `apps/web/src/features/conversation/MessageList.tsx`                                 | AI音声ボタン               |
+| `apps/web/src/features/conversation/ConversationPage.tsx`                            | 録音UI統合                 |
+| `apps/web/src/styles.css`                                                            | 音声UI                     |
+| `docs/MVPフェーズ2実装書.md`                                                         | 本記録                     |
+| `docs/CODE_READING_GUIDE.md`                                                         | 音声コードの追い方         |
 
 ## 7. テスト、未解決事項、次候補
 
@@ -185,6 +185,6 @@ OpenAIのChat Completionsレスポンスに含まれる `prompt_tokens` と `com
 - `LlmCostCalculator.java`：Token単価と為替による概算料金計算
 - `ConversationSession.java`：会話単位の累積利用量
 - `V4__add_conversation_llm_usage.sql`：Token、料金、モデル列
-- `ConversationDtos.java`、`frontend/src/shared/api.ts`：利用量のAPI契約
+- `ConversationDtos.java`、`apps/web/src/shared/api.ts`：利用量のAPI契約
 - `FeedbackPanel.tsx`：Token、料金、ホームボタン表示
 - `LlmCostCalculatorTest.java`：料金単位のテスト

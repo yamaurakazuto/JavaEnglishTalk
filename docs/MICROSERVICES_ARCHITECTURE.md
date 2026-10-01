@@ -17,6 +17,8 @@
 
 イベント1件ごとにはサービスを作らない。同じ整合性境界とデータを共有する処理は同じサービスに置く。
 
+リポジトリはMonorepoとし、実行単位を `apps/` と `services/` に分ける。各実行単位の内部はPackage by Featureで構成する。詳細な配置規則は `docs/MONOREPO_STRUCTURE.md` を参照する。
+
 ## 2. 現在の構成
 
 ```text
@@ -134,14 +136,14 @@ X-Internal-Service-Key: ${INTERNAL_SERVICE_KEY}
 
 ### コード配置
 
-| 責務                          | ファイル                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------- |
-| 独立プロセス入口              | `speech-service/src/main/java/com/talkon/speechservice/SpeechServiceApplication.java` |
-| 内部API                       | `speech-service/src/main/java/com/talkon/speechservice/SpeechController.java`         |
-| 内部認証                      | `speech-service/src/main/java/com/talkon/speechservice/InternalKeyInterceptor.java`   |
-| OpenAI / Local実装            | `speech-service/src/main/java/com/talkon/speechservice/SpeechProviderConfig.java`     |
-| Backend側Client               | `backend/src/main/java/com/talkon/speech/RemoteSpeechClientConfig.java`               |
-| Backend側オーケストレーション | `backend/src/main/java/com/talkon/speech/VoiceConversationService.java`               |
+| 責務                          | ファイル                                                                                              |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 独立プロセス入口              | `services/speech-service/src/main/java/com/talkon/speechservice/SpeechServiceApplication.java`        |
+| 内部API                       | `services/speech-service/src/main/java/com/talkon/speechservice/speech/SpeechController.java`         |
+| 内部認証                      | `services/speech-service/src/main/java/com/talkon/speechservice/security/InternalKeyInterceptor.java` |
+| OpenAI / Local実装            | `services/speech-service/src/main/java/com/talkon/speechservice/speech/SpeechProviderConfig.java`     |
+| Backend側Client               | `services/core-api/src/main/java/com/talkon/speech/RemoteSpeechClientConfig.java`                     |
+| Backend側オーケストレーション | `services/core-api/src/main/java/com/talkon/speech/VoiceConversationService.java`                     |
 
 ## 8. 障害・可用性設計
 

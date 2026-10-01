@@ -36,23 +36,31 @@ TalkOnは、AIとの英会話、音声入力、読み上げ、翻訳、フィー
 
 ```text
 EnglishTalkapp/
-├── backend/            Spring Bootバックエンド
-│   ├── src/main/       Javaコード、設定、DBマイグレーション
-│   ├── src/test/       バックエンドテスト
-│   └── data/           ローカルH2データベース
-├── speech-service/     STT・TTSを担当する音声マイクロサービス
-├── frontend/           Reactフロントエンド
-│   ├── src/            画面、機能、APIクライアント
-│   └── e2e/            E2Eテスト
-├── docs/               設計書、実装書、コードリーディング資料
-├── .env.example        ローカル環境変数の見本
-└── package.json        全サービスの実行コマンド
+├── apps/
+│   └── web/                       React Webアプリ
+│       ├── src/app/               Router・アプリ起動
+│       ├── src/features/          機能別UI
+│       ├── src/shared/            共通API・UI
+│       └── e2e/                   E2Eテスト
+├── services/
+│   ├── core-api/                  公開API・コア業務
+│   │   ├── src/main/java/         機能別Java package
+│   │   ├── src/main/resources/    設定・DB Migration
+│   │   ├── src/test/              Backendテスト
+│   │   └── data/                  ローカルH2 DB
+│   └── speech-service/            STT・TTS内部サービス
+├── docs/                          設計書・作業資料
+├── scripts/                       Monorepo全体の補助スクリプト
+├── settings.gradle                Javaサービスの配置定義
+└── package.json                   Monorepo全体の操作コマンド
 ```
+
+配置と依存ルールは[Monorepo・Package by Feature設計書](docs/MONOREPO_STRUCTURE.md)を参照してください。
 
 ## 必要なもの
 
 - Java 21以上
-- Node.js 20以上
+- Node.js 20.19以上、または22.12以上（Vite 7の対応版）
 - npm
 - OpenAI APIキー
 - OpenAI APIの利用可能なクレジット
@@ -152,7 +160,7 @@ Core Backend、音声サービス、フロントエンドが同時に起動し�
 ローカル環境では、ユーザー、会話、メッセージ、翻訳、フィードバック、トークン数をH2 Databaseへ保存します。
 
 ```text
-backend/data/talkon.mv.db
+services/core-api/data/talkon.mv.db
 ```
 
 音声ファイル自体は保存しません。マイク音声は文字起こしに使用し、文字列として会話履歴へ保存します。
@@ -198,25 +206,26 @@ npm test
 個別に確認する場合は次のコマンドを使用します。
 
 ```bash
-./gradlew :backend:test :speech-service:test
-npm test --prefix frontend
+./gradlew :core-api:test :speech-service:test
+npm test --prefix apps/web
 npm run typecheck
 npm run lint
 ```
 
 ## ドキュメント
 
-| ファイル                                                     | 内容                                     |
-| ------------------------------------------------------------ | ---------------------------------------- |
-| [画面状態・イベント追跡手順書](docs/UI_EVENT_STATE_GUIDE.md) | 各画面の状態・操作・保存先の対応表       |
-| [マイクロサービス設計書](docs/MICROSERVICES_ARCHITECTURE.md) | サービス境界、通信、データ所有、移行計画 |
-| [コードリーディングガイド](docs/CODE_READING_GUIDE.md)       | イベントから処理を追うための案内         |
-| [システム設計書](docs/SYSTEM_DESIGN.md)                      | 全体構成と設計方針                       |
-| [開発ガイド](docs/DEVELOPMENT.md)                            | 開発環境と作業方法                       |
-| [MVPフェーズ2実装書](docs/MVPフェーズ2実装書.md)             | フェーズ2で実装した内容                  |
-| [MVPフェーズ2移行書](docs/MVPフェーズ2移行書.md)             | フェーズ2への移行内容                    |
-| [ダッシュボード作業記録](docs/MVP_DASHBOARD_WORK_LOG.md)     | ダッシュボードの設計・実装記録           |
-| [OpenAI API料金ガイド](docs/OPENAI_API_COST_GUIDE.md)        | 料金構造と月額目安                       |
+| ファイル                                                         | 内容                                     |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| [画面状態・イベント追跡手順書](docs/UI_EVENT_STATE_GUIDE.md)     | 各画面の状態・操作・保存先の対応表       |
+| [マイクロサービス設計書](docs/MICROSERVICES_ARCHITECTURE.md)     | サービス境界、通信、データ所有、移行計画 |
+| [Monorepo・Package by Feature設計書](docs/MONOREPO_STRUCTURE.md) | ディレクトリ配置とfeature間の依存ルール  |
+| [コードリーディングガイド](docs/CODE_READING_GUIDE.md)           | イベントから処理を追うための案内         |
+| [システム設計書](docs/SYSTEM_DESIGN.md)                          | 全体構成と設計方針                       |
+| [開発ガイド](docs/DEVELOPMENT.md)                                | 開発環境と作業方法                       |
+| [MVPフェーズ2実装書](docs/MVPフェーズ2実装書.md)                 | フェーズ2で実装した内容                  |
+| [MVPフェーズ2移行書](docs/MVPフェーズ2移行書.md)                 | フェーズ2への移行内容                    |
+| [ダッシュボード作業記録](docs/MVP_DASHBOARD_WORK_LOG.md)         | ダッシュボードの設計・実装記録           |
+| [OpenAI API料金ガイド](docs/OPENAI_API_COST_GUIDE.md)            | 料金構造と月額目安                       |
 
 ## 現在の位置づけ
 

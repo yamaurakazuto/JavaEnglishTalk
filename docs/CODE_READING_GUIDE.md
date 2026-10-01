@@ -6,8 +6,8 @@
 
 音声会話は次の順で読む。
 
-1. `frontend/src/features/conversation/VoiceRecorder.tsx` が録音開始・停止とUI状態を管理する。
-2. `frontend/src/shared/api.ts` の `sendVoice` がBlobをmultipartへ変換する。
+1. `apps/web/src/features/conversation/VoiceRecorder.tsx` が録音開始・停止とUI状態を管理する。
+2. `apps/web/src/shared/api.ts` の `sendVoice` がBlobをmultipartへ変換する。
 3. `VoiceConversationController` が認証ユーザーと音声を受け取る。
 4. `VoiceConversationService` が入力検証とSTT → LLM → TTSを調整する。
 5. `SpeechRecognitionService` と `TextToSpeechService` が外部APIとの境界になる。
@@ -25,7 +25,7 @@
 4. `ConversationSession.addLlmUsage()` が会話単位で累積する。
 5. `ConversationDtos.Detail.llmUsage` がFrontendへ返す。
 6. `FeedbackPanel.LlmUsage` が入力、出力、合計Token、概算料金を表示する。
-7. 会話中は `App.tsx` の `ConversationUsageBadge` が同じ `llmUsage` を小さく表示する。
+7. 会話中は `features/conversation/ConversationPage.tsx` の `ConversationUsageBadge` が同じ `llmUsage` を小さく表示する。
 
 翻訳と終了後Feedbackはこの会話料金に含めない。単価は `application.yml` の `app.llm.input-usd-per-million`、`output-usd-per-million`、`yen-per-usd` を確認する。
 
@@ -45,20 +45,22 @@
 ## 2. リポジトリの入口
 
 ```text
-frontend/src/                  React実装
-frontend/e2e/                  ブラウザE2E
-backend/src/main/java/         Spring Boot実装
-backend/src/main/resources/    設定とFlyway Migration
-backend/src/test/              Backendテスト
-docs/                          設計・開発・移行資料
+apps/web/src/                  React実装
+apps/web/e2e/                  ブラウザE2E
+services/core-api/src/main/java/         Core API実装
+services/core-api/src/main/resources/    Core API設定とFlyway Migration
+services/core-api/src/test/              Core APIテスト
+services/speech-service/src/main/java/   音声サービス実装
+services/speech-service/src/test/        音声サービステスト
+docs/                                    設計・開発・移行資料
 ```
 
-起動・検査コマンドはルートの `package.json`、個別設定は `backend/build.gradle`、`frontend/package.json`、`application.yml`、`vite.config.ts` を見る。
+起動・検査コマンドはルートの `package.json`、個別設定は各実行単位の `build.gradle`／`package.json`、`application.yml`、`vite.config.ts` を見る。配置と依存方向は `docs/MONOREPO_STRUCTURE.md` を確認する。
 
 ## 3. 最短で全体をつかむ順番
 
-1. `frontend/src/App.tsx`：URL、認証分岐、画面状態
-2. `frontend/src/shared/api.ts`：フロントとBackendの通信契約
+1. `apps/web/src/app/App.tsx`：URL、認証分岐、画面状態
+2. `apps/web/src/shared/api.ts`：フロントとBackendの通信契約
 3. 対象の `*Controller.java`：HTTP Method、Path、Status
 4. 対象の `*Service.java`：業務ルール、transaction、状態遷移
 5. `*Repository.java` とEntity：検索条件、所有者条件、保存項目
@@ -87,7 +89,7 @@ Repositoryメソッドのコメントは検索条件とその条件が必要な�
 例として「会話を終了」を追う。
 
 ```text
-表示: App.tsx の「会話を終了」
+表示: features/conversation/ConversationPage.tsx の「会話を終了」
   ↓ onClick={finish}
 Frontend処理: ConversationPage.finish()
   ↓ api.finish(c.id)
@@ -103,8 +105,8 @@ API入口: ConversationController.finish()
   └─ commit後にFeedbackGenerationService.generate()
 保存: ConversationSession / ConversationFeedback
   ↓
-表示更新: FeedbackPanel + App.tsxのpolling
-テスト: App.test.tsx / ConversationIntegrationTest.java / happy-path.spec.ts
+表示更新: FeedbackPanel + ConversationPage.tsxのpolling
+テスト: app/App.test.tsx / ConversationIntegrationTest.java / happy-path.spec.ts
 ```
 
 他機能も「表示 → event handler → api.ts → Controller → Service → Repository/Entity → DTO → Test」の順にたどる。
@@ -114,7 +116,7 @@ API入口: ConversationController.finish()
 ### 5.1 登録・ログイン
 
 ```text
-App.AuthForm
+features/auth/AuthForm
   → api.register/login
   → AuthController
   → UserRepository / PasswordEncoder / AuthenticationManager
@@ -278,16 +280,16 @@ Backend状態は `FeedbackStatus` と `ConversationFeedback`、Frontend表示は
 
 ```bash
 # API入口
-rg -n "@GetMapping|@PostMapping|@PutMapping" backend/src/main/java
+rg -n "@GetMapping|@PostMapping|@PutMapping" services/core-api/src/main/java
 
 # 特定APIを呼ぶFrontend
-rg -n "api\.finish|api\.send|api\.translate" frontend/src
+rg -n "api\.finish|api\.send|api\.translate" apps/web/src
 
 # Entityや状態の利用箇所
-rg -n "FeedbackStatus|ConversationStatus" backend/src
+rg -n "FeedbackStatus|ConversationStatus" services/core-api/src
 
 # 全テストケース
-rg -n "@Test|test\(" backend/src/test frontend/src frontend/e2e
+rg -n "@Test|test\(" services/core-api/src/test apps/web/src apps/web/e2e
 
 # 設定値の参照元
 rg -n "OPENAI_|CORS_ORIGIN|COOKIE_SECURE|VITE_API_URL" .
@@ -296,11 +298,11 @@ rg -n "OPENAI_|CORS_ORIGIN|COOKIE_SECURE|VITE_API_URL" .
 ## 12. 変更後の最小確認
 
 ```bash
-./gradlew :backend:test :speech-service:test :backend:spotlessCheck :speech-service:spotlessCheck
-npm test --prefix frontend
-npm run typecheck --prefix frontend
-npm run lint --prefix frontend
+./gradlew :core-api:test :speech-service:test :core-api:spotlessCheck :speech-service:spotlessCheck
+npm test --prefix apps/web
+npm run typecheck --prefix apps/web
+npm run lint --prefix apps/web
 npm run format:check
 ```
 
-ユーザーフロー、Cookie/CORS、非同期処理を変更した場合は、`npm run dev` で全体を起動して `npm run e2e --prefix frontend` も実行する。
+ユーザーフロー、Cookie/CORS、非同期処理を変更した場合は、`npm run dev` で全体を起動して `npm run e2e --prefix apps/web` も実行する。

@@ -45,7 +45,7 @@ Spring Boot
 
 | 機能           | フロントエンド                    | API入口                              | 業務処理                                      |
 | -------------- | --------------------------------- | ------------------------------------ | --------------------------------------------- |
-| 登録・ログイン | `App.tsx`                         | `AuthController`                     | `AuthenticationManager`、`UserRepository`     |
+| 登録・ログイン | `features/auth/AuthForm.tsx`      | `AuthController`                     | `AuthenticationManager`、`UserRepository`     |
 | 英語レベル選択 | `EnglishLevelPage.tsx`            | `UserProfileController`              | `User.selectEnglishLevel()`                   |
 | ダッシュボード | `DashboardPage.tsx`               | `DashboardController`                | `DashboardService`                            |
 | 会話開始・送信 | `ConversationPage`、`MessageList` | `ConversationController`             | `ConversationService`、`ConversationAiClient` |
@@ -66,7 +66,7 @@ Spring Boot
 | `/history`           | 必要 | レベル選択済み         | 会話履歴一覧                 |
 | `/history/:id`       | 必要 | 所有会話               | 終了済み会話とフィードバック |
 
-`App.tsx` が認証状態とルーティングを管理する。初期表示では `/api/auth/me` を呼び、未認証ならログイン、レベル未選択ならオンボーディングへ誘導する。
+`apps/web/src/app/App.tsx` が認証状態とルーティングを管理する。初期表示では `/api/auth/me` を呼び、未認証ならログイン、レベル未選択ならオンボーディングへ誘導する。各画面の状態とイベントは `features` 配下へ分離する。
 
 ## 5. API設計
 

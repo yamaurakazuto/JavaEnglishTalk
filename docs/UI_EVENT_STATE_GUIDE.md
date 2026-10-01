@@ -11,7 +11,7 @@ TalkOnの状態は、次の3層に分かれている。
 | 状態の種類         | 例                                                                    | 主な場所                                                  |
 | ------------------ | --------------------------------------------------------------------- | --------------------------------------------------------- |
 | 一時的な画面状態   | 読み込み中、送信中、エラー、翻訳の開閉、録音秒数                      | Reactコンポーネントの `useState`                          |
-| APIで共有する状態  | `User`、`Conversation`、`Feedback`、`DashboardData`                   | `frontend/src/shared/api.ts` のTypeScript型、BackendのDTO |
+| APIで共有する状態  | `User`、`Conversation`、`Feedback`、`DashboardData`                   | `apps/web/src/shared/api.ts` のTypeScript型、BackendのDTO |
 | 永続化する業務状態 | 会話の `ACTIVE / ENDED`、Feedbackの `GENERATING / COMPLETED / FAILED` | BackendのEnum・Entity、Flyway Migration                   |
 
 表示だけを変える場合でも、APIレスポンスや永続状態が条件になっていないかを確認する。基本の追跡順は次のとおり。
@@ -19,7 +19,7 @@ TalkOnの状態は、次の3層に分かれている。
 ```text
 画面コンポーネント
   → イベントハンドラー
-  → frontend/src/shared/api.ts
+  → apps/web/src/shared/api.ts
   → Backend Controller
   → Service
   → Entity / Repository / DB
@@ -31,24 +31,24 @@ TalkOnの状態は、次の3層に分かれている。
 
 | 画面・部品               | URL                  | 表示を構成するファイル                                       | 主な画面状態・表示条件                                                                             |
 | ------------------------ | -------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| アプリ全体・ルーティング | 全URL                | `frontend/src/App.tsx`                                       | `user` が `undefined` なら初期読込、`null` なら未認証、`englishLevel` が未設定ならオンボーディング |
-| ログイン                 | `/login`             | `frontend/src/App.tsx` の `AuthForm`                         | `mode="login"`、`busy`、`error`                                                                    |
-| ユーザー登録             | `/register`          | `frontend/src/App.tsx` の `AuthForm`                         | `mode="register"`、`busy`、`error`                                                                 |
-| オンボーディング         | `/onboarding`        | `frontend/src/features/onboarding/EnglishLevelPage.tsx`      | 選択肢は `levels`、処理中の選択肢は `busy`、失敗は `error`                                         |
-| ダッシュボード           | `/`                  | `frontend/src/features/dashboard/DashboardPage.tsx`          | `dashboard`、`busy`、`error`、`activeConversationId`                                               |
-| 学習サマリー             | `/` 内               | `frontend/src/features/dashboard/StudySummary.tsx`           | 親から受け取る学習時間・継続日数・総学習日数                                                       |
-| アクティビティ           | `/` 内               | `frontend/src/features/dashboard/ActivityGrid.tsx`           | `activities` から週・日・強度を表示                                                                |
-| 会話                     | `/conversations/:id` | `frontend/src/App.tsx` の `ConversationPage`                 | `c`、`text`、`busy`、`error`、`loadState`                                                          |
-| 会話履歴詳細             | `/history/:id`       | `frontend/src/App.tsx` の `ConversationPage`                 | 会話画面と共通。`c.status` が `ENDED` なら振り返り表示                                             |
-| メッセージ一覧           | 会話画面内           | `frontend/src/features/conversation/MessageList.tsx`         | `translatingId`、`speakingId`、`openTranslations`                                                  |
-| 単語翻訳ツールチップ     | AIメッセージ内       | `frontend/src/features/conversation/WordTranslationText.tsx` | `tooltip`、翻訳キャッシュ、300msのhover/focus待機                                                  |
-| 音声入力                 | 会話画面内           | `frontend/src/features/conversation/VoiceRecorder.tsx`       | `recording`、`sending`、`seconds`、`transcript`、`warning`、`audioUrl`                             |
-| Feedback                 | 終了済み会話内       | `frontend/src/features/conversation/FeedbackPanel.tsx`       | `feedback.status` ごとに生成中・失敗・完了を分岐                                                   |
-| 会話履歴一覧             | `/history`           | `frontend/src/App.tsx` の `History`                          | `data`、`error`、履歴0件表示                                                                       |
-| 共通エラー境界           | React全体            | `frontend/src/ErrorBoundary.tsx`                             | 未捕捉の描画エラー                                                                                 |
-| 見た目・レスポンシブ     | 全画面               | `frontend/src/styles.css`                                    | class名に対応する色、配置、表示幅                                                                  |
+| アプリ全体・ルーティング | 全URL                | `apps/web/src/app/App.tsx`                                   | `user` が `undefined` なら初期読込、`null` なら未認証、`englishLevel` が未設定ならオンボーディング |
+| ログイン                 | `/login`             | `apps/web/src/features/auth/AuthForm.tsx`                    | `mode="login"`、`busy`、`error`                                                                    |
+| ユーザー登録             | `/register`          | `apps/web/src/features/auth/AuthForm.tsx`                    | `mode="register"`、`busy`、`error`                                                                 |
+| オンボーディング         | `/onboarding`        | `apps/web/src/features/onboarding/EnglishLevelPage.tsx`      | 選択肢は `levels`、処理中の選択肢は `busy`、失敗は `error`                                         |
+| ダッシュボード           | `/`                  | `apps/web/src/features/dashboard/DashboardPage.tsx`          | `dashboard`、`busy`、`error`、`activeConversationId`                                               |
+| 学習サマリー             | `/` 内               | `apps/web/src/features/dashboard/StudySummary.tsx`           | 親から受け取る学習時間・継続日数・総学習日数                                                       |
+| アクティビティ           | `/` 内               | `apps/web/src/features/dashboard/ActivityGrid.tsx`           | `activities` から週・日・強度を表示                                                                |
+| 会話                     | `/conversations/:id` | `apps/web/src/features/conversation/ConversationPage.tsx`    | `conversation`、`text`、`busy`、`error`、`loadState`                                               |
+| 会話履歴詳細             | `/history/:id`       | `apps/web/src/features/conversation/ConversationPage.tsx`    | 会話画面と共通。`conversation.status` が `ENDED` なら振り返り表示                                  |
+| メッセージ一覧           | 会話画面内           | `apps/web/src/features/conversation/MessageList.tsx`         | `translatingId`、`speakingId`、`openTranslations`                                                  |
+| 単語翻訳ツールチップ     | AIメッセージ内       | `apps/web/src/features/conversation/WordTranslationText.tsx` | `tooltip`、翻訳キャッシュ、300msのhover/focus待機                                                  |
+| 音声入力                 | 会話画面内           | `apps/web/src/features/conversation/VoiceRecorder.tsx`       | `recording`、`sending`、`seconds`、`transcript`、`warning`、`audioUrl`                             |
+| Feedback                 | 終了済み会話内       | `apps/web/src/features/conversation/FeedbackPanel.tsx`       | `feedback.status` ごとに生成中・失敗・完了を分岐                                                   |
+| 会話履歴一覧             | `/history`           | `apps/web/src/features/history/HistoryPage.tsx`              | `data`、`error`、履歴0件表示                                                                       |
+| 共通エラー境界           | React全体            | `apps/web/src/app/ErrorBoundary.tsx`                         | 未捕捉の描画エラー                                                                                 |
+| 見た目・レスポンシブ     | 全画面               | `apps/web/src/styles.css`                                    | class名に対応する色、配置、表示幅                                                                  |
 
-画面で利用するAPIレスポンス型と呼び出し関数は、すべて `frontend/src/shared/api.ts` に集約されている。
+画面で利用するAPIレスポンス型と呼び出し関数は、すべて `apps/web/src/shared/api.ts` に集約されている。
 
 ## 3. イベント別のファイル位置
 
@@ -64,10 +64,10 @@ TalkOnの状態は、次の3層に分かれている。
 
 関連ファイル:
 
-- 認証・認可規則: `backend/src/main/java/com/talkon/auth/SecurityConfig.java`
-- ログインユーザー表現: `backend/src/main/java/com/talkon/auth/TalkOnPrincipal.java`
-- User Entity: `backend/src/main/java/com/talkon/user/User.java`
-- レベル値: `backend/src/main/java/com/talkon/user/EnglishLevel.java`
+- 認証・認可規則: `services/core-api/src/main/java/com/talkon/auth/SecurityConfig.java`
+- ログインユーザー表現: `services/core-api/src/main/java/com/talkon/auth/TalkOnPrincipal.java`
+- User Entity: `services/core-api/src/main/java/com/talkon/user/User.java`
+- レベル値: `services/core-api/src/main/java/com/talkon/user/EnglishLevel.java`
 
 ### 3.2 ダッシュボード・履歴
 
@@ -79,7 +79,7 @@ TalkOnの状態は、次の3層に分かれている。
 | 履歴読込           | `History` の初回 `useEffect`             | `api.history()`   | `ConversationController.history()` | `ConversationService.history()`                         |
 | 履歴詳細表示       | 履歴の `Link`                            | `api.detail(id)`  | `ConversationController.detail()`  | `ConversationService.detail()`                          |
 
-ダッシュボードのレスポンス形は `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`、Frontend型は `DashboardData` と `DailyActivity` を確認する。
+ダッシュボードのレスポンス形は `services/core-api/src/main/java/com/talkon/dashboard/DashboardResponse.java`、Frontend型は `DashboardData` と `DailyActivity` を確認する。
 
 ### 3.3 テキスト会話
 
@@ -91,7 +91,7 @@ TalkOnの状態は、次の3層に分かれている。
 | Enter送信    | `textarea.onKeyDown` → `sendOnEnter()` | `api.send()`     | 同上                              | Shift+EnterとIME変換中は送信しない                          |
 | 会話終了     | 上下の終了ボタン → `finish()`          | `api.finish()`   | `ConversationController.finish()` | `ConversationSession.end()`、Feedbackを `GENERATING` で作成 |
 
-AI会話内容は `ConversationAIService.java`、実際のAIクライアントとFake実装は `backend/src/main/java/com/talkon/llm/AiClientConfig.java`、プロンプトは `backend/src/main/java/com/talkon/llm/Prompts.java` を確認する。
+AI会話内容は `ConversationAIService.java`、実際のAIクライアントとFake実装は `services/core-api/src/main/java/com/talkon/llm/AiClientConfig.java`、プロンプトは `services/core-api/src/main/java/com/talkon/llm/Prompts.java` を確認する。
 
 ### 3.4 翻訳・読み上げ
 
@@ -103,7 +103,7 @@ AI会話内容は `ConversationAIService.java`、実際のAIクライアント�
 | 単語訳非表示         | mouse leave / blur → `hideWord()` | なし                  | なし                                     | `tooltip` をクリア                                                                |
 | 英文読み上げ         | `MessageList.playSpeech()`        | `api.speech()`        | `VoiceConversationController.speech()`   | 音声Blobを一時再生。DB保存なし                                                    |
 
-翻訳処理本体は `backend/src/main/java/com/talkon/conversation/TranslationService.java`、音声合成本体は `backend/src/main/java/com/talkon/speech/TextToSpeechService.java` を確認する。
+翻訳処理本体は `services/core-api/src/main/java/com/talkon/conversation/TranslationService.java`、音声合成本体は `services/core-api/src/main/java/com/talkon/speech/TextToSpeechService.java` を確認する。
 
 ### 3.5 音声会話
 
@@ -115,7 +115,7 @@ AI会話内容は `ConversationAIService.java`、実際のAIクライアント�
 | AI音声自動再生   | `playReturnedAudio()`                    | レスポンス内Base64 | なし                                      | `audioUrl` を作成。失敗時は `warning` を表示                   |
 | 録音画面を離れる | `VoiceRecorder` のcleanup                | なし               | なし                                      | マイク、timer、Object URLを解放                                |
 
-Backend側のSTT/TTS境界は `SpeechRecognitionService.java` と `TextToSpeechService.java`、内部HTTP Clientは `RemoteSpeechClientConfig.java` を確認する。OpenAIとの通信実装は `speech-service/src/main/java/com/talkon/speechservice/SpeechProviderConfig.java`、内部APIは同ディレクトリの `SpeechController.java` にある。
+Backend側のSTT/TTS境界は `SpeechRecognitionService.java` と `TextToSpeechService.java`、内部HTTP Clientは `RemoteSpeechClientConfig.java` を確認する。OpenAIとの通信実装は `services/speech-service/src/main/java/com/talkon/speechservice/speech/SpeechProviderConfig.java`、内部APIは同ディレクトリの `SpeechController.java` にある。
 
 ### 3.6 Feedback
 
@@ -127,7 +127,7 @@ Backend側のSTT/TTS境界は `SpeechRecognitionService.java` と `TextToSpeechS
 | 生成失敗     | 自動処理                            | なし                  | `FeedbackGenerationService.generate()`   | `ConversationFeedback.fail()` → `FAILED`        |
 | 再生成       | `FeedbackPanel` → `retryFeedback()` | `api.retryFeedback()` | `ConversationController.retryFeedback()` | `ConversationFeedback.retry()` → `GENERATING`   |
 
-Feedbackの構造は `backend/src/main/java/com/talkon/feedback/FeedbackData.java`、カテゴリは `FeedbackCategory.java`、API変換は `ConversationDtos.feedback()` を確認する。
+Feedbackの構造は `services/core-api/src/main/java/com/talkon/feedback/FeedbackData.java`、カテゴリは `FeedbackCategory.java`、API変換は `ConversationDtos.feedback()` を確認する。
 
 ## 4. 永続状態と状態遷移
 
@@ -140,14 +140,14 @@ ConversationSession生成
   → ENDED
 ```
 
-| 確認内容             | ファイル                                                                 |
-| -------------------- | ------------------------------------------------------------------------ |
-| 許可される値         | `backend/src/main/java/com/talkon/conversation/ConversationStatus.java`  |
-| 初期値・更新メソッド | `backend/src/main/java/com/talkon/conversation/ConversationSession.java` |
-| 遷移条件・エラー     | `backend/src/main/java/com/talkon/conversation/ConversationService.java` |
-| Frontend型           | `frontend/src/shared/api.ts` の `Conversation.status`                    |
-| 表示分岐             | `frontend/src/App.tsx` の `ConversationPage`、`StatusBadge`              |
-| DB列                 | `conversation_sessions.status`                                           |
+| 確認内容             | ファイル                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| 許可される値         | `services/core-api/src/main/java/com/talkon/conversation/ConversationStatus.java`  |
+| 初期値・更新メソッド | `services/core-api/src/main/java/com/talkon/conversation/ConversationSession.java` |
+| 遷移条件・エラー     | `services/core-api/src/main/java/com/talkon/conversation/ConversationService.java` |
+| Frontend型           | `apps/web/src/shared/api.ts` の `Conversation.status`                              |
+| 表示分岐             | `apps/web/src/features/conversation/ConversationPage.tsx`、`FeedbackPanel.tsx`     |
+| DB列                 | `conversation_sessions.status`                                                     |
 
 ### Feedback状態
 
@@ -158,15 +158,15 @@ GENERATING
                      └─ retry() → GENERATING
 ```
 
-| 確認内容             | ファイル                                                                   |
-| -------------------- | -------------------------------------------------------------------------- |
-| 許可される値         | `backend/src/main/java/com/talkon/feedback/FeedbackStatus.java`            |
-| 初期値・更新メソッド | `backend/src/main/java/com/talkon/feedback/ConversationFeedback.java`      |
-| 非同期生成           | `backend/src/main/java/com/talkon/feedback/FeedbackGenerationService.java` |
-| Frontend型           | `frontend/src/shared/api.ts` の `Feedback.status`                          |
-| 表示分岐             | `frontend/src/features/conversation/FeedbackPanel.tsx`                     |
-| polling              | `frontend/src/App.tsx` の `ConversationPage`                               |
-| DB列                 | `conversation_feedbacks.status`                                            |
+| 確認内容             | ファイル                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| 許可される値         | `services/core-api/src/main/java/com/talkon/feedback/FeedbackStatus.java`            |
+| 初期値・更新メソッド | `services/core-api/src/main/java/com/talkon/feedback/ConversationFeedback.java`      |
+| 非同期生成           | `services/core-api/src/main/java/com/talkon/feedback/FeedbackGenerationService.java` |
+| Frontend型           | `apps/web/src/shared/api.ts` の `Feedback.status`                                    |
+| 表示分岐             | `apps/web/src/features/conversation/FeedbackPanel.tsx`                               |
+| polling              | `apps/web/src/features/conversation/ConversationPage.tsx`                            |
+| DB列                 | `conversation_feedbacks.status`                                                      |
 
 ### その他の永続データ
 
@@ -178,7 +178,7 @@ GENERATING
 | Feedback内容               | `ConversationFeedback.java` | `conversation_feedbacks`            | `FeedbackPanel.tsx`                                |
 | LLM利用量・料金            | `ConversationSession.java`  | `conversation_sessions.llm_*`       | `ConversationUsageBadge`、`FeedbackPanel.LlmUsage` |
 
-DB定義は `backend/src/main/resources/db/migration/` のMigrationを番号順に確認する。適用済みMigrationは編集せず、スキーマ変更時は新しい番号のファイルを追加する。
+DB定義は `services/core-api/src/main/resources/db/migration/` のMigrationを番号順に確認する。適用済みMigrationは編集せず、スキーマ変更時は新しい番号のファイルを追加する。
 
 ## 5. API契約の対応表
 
@@ -206,7 +206,7 @@ DB定義は `backend/src/main/resources/db/migration/` のMigrationを番号順�
 1. 上の「画面別」表から対象コンポーネントを特定する。
 2. JSXの `onClick`、`onSubmit`、`onChange`、`onKeyDown`、`useEffect` からイベントハンドラーを探す。
 3. ハンドラーが更新する `useState` と、JSX側の表示条件を確認する。
-4. `api.*` を呼んでいる場合は `frontend/src/shared/api.ts` でPath、Method、Request、Response型を確認する。
+4. `api.*` を呼んでいる場合は `apps/web/src/shared/api.ts` でPath、Method、Request、Response型を確認する。
 5. 対応するControllerからServiceへ進み、許可条件、状態遷移、例外を確認する。
 6. 保存を伴う場合はEntity、Repository、Migrationを確認する。
 7. DTOとFrontend型に同じ項目・null許可・状態値が定義されているか確認する。
@@ -215,30 +215,30 @@ DB定義は `backend/src/main/resources/db/migration/` のMigrationを番号順�
 変更後の基本確認:
 
 ```bash
-./gradlew :backend:test :speech-service:test :backend:spotlessCheck :speech-service:spotlessCheck
-npm test --prefix frontend
-npm run typecheck --prefix frontend
-npm run lint --prefix frontend
+./gradlew :core-api:test :speech-service:test :core-api:spotlessCheck :speech-service:spotlessCheck
+npm test --prefix apps/web
+npm run typecheck --prefix apps/web
+npm run lint --prefix apps/web
 npm run format:check
 ```
 
-画面遷移、Cookie / CSRF、非同期処理、音声操作を変更した場合は、アプリを起動して `npm run e2e --prefix frontend` も実行する。
+画面遷移、Cookie / CSRF、非同期処理、音声操作を変更した場合は、アプリを起動して `npm run e2e --prefix apps/web` も実行する。
 
 ## 7. よく使う検索
 
 ```bash
 # 画面イベントとReact state
-rg -n "useState|useEffect|onClick|onSubmit|onChange|onKeyDown" frontend/src
+rg -n "useState|useEffect|onClick|onSubmit|onChange|onKeyDown" apps/web/src
 
 # Frontend API呼び出し
-rg -n "api\." frontend/src
+rg -n "api\." apps/web/src
 
 # Backend API入口
-rg -n "@(Get|Post|Put|Delete)Mapping" backend/src/main/java
+rg -n "@(Get|Post|Put|Delete)Mapping" services/core-api/src/main/java
 
 # 永続状態の利用箇所
-rg -n "ConversationStatus|FeedbackStatus|EnglishLevel" backend/src frontend/src
+rg -n "ConversationStatus|FeedbackStatus|EnglishLevel" services/core-api/src apps/web/src
 
 # Entity更新メソッドの呼び出し元
-rg -n "\.end\(|\.complete\(|\.fail\(|\.retry\(|selectEnglishLevel" backend/src
+rg -n "\.end\(|\.complete\(|\.fail\(|\.retry\(|selectEnglishLevel" services/core-api/src
 ```

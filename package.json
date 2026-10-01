@@ -2,15 +2,18 @@
   "name": "talkon",
   "private": true,
   "version": "0.1.0",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
   "scripts": {
-    "setup": "npm install --prefix frontend",
-    "dev": "node --env-file-if-exists=.env node_modules/concurrently/dist/bin/concurrently.js -k -n backend,speech,frontend -c blue,magenta,green \"./gradlew :backend:bootRun\" \"./gradlew :speech-service:bootRun\" \"npm run dev --prefix frontend\"",
-    "test": "./gradlew :backend:test :speech-service:test && npm test --prefix frontend",
-    "typecheck": "npm run typecheck --prefix frontend",
-    "lint": "npm run lint --prefix frontend",
-    "format": "./gradlew :backend:spotlessApply :speech-service:spotlessApply && prettier --write \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\" \"speech-service/src/**/*.yml\"",
-    "format:check": "./gradlew :backend:spotlessCheck :speech-service:spotlessCheck && prettier --check \".github/**/*.yml\" \"frontend/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"backend/src/**/*.yml\" \"speech-service/src/**/*.yml\"",
-    "build": "./gradlew :backend:bootJar :speech-service:bootJar && npm run build --prefix frontend"
+    "setup": "npm install --prefix apps/web",
+    "dev": "sh scripts/dev.sh",
+    "test": "./gradlew :core-api:test :speech-service:test && npm test --prefix apps/web",
+    "typecheck": "npm run typecheck --prefix apps/web",
+    "lint": "npm run lint --prefix apps/web",
+    "format": "./gradlew :core-api:spotlessApply :speech-service:spotlessApply && prettier --write \".github/**/*.yml\" \"apps/web/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"services/core-api/src/**/*.yml\" \"services/speech-service/src/**/*.yml\"",
+    "format:check": "./gradlew :core-api:spotlessCheck :speech-service:spotlessCheck && prettier --check \".github/**/*.yml\" \"apps/web/**/*.{ts,tsx,js,css,html}\" \"docs/**/*.md\" \"services/core-api/src/**/*.yml\" \"services/speech-service/src/**/*.yml\"",
+    "build": "./gradlew :core-api:bootJar :speech-service:bootJar && npm run build --prefix apps/web"
   },
   "devDependencies": {
     "concurrently": "9.2.0",
