@@ -1,4 +1,6 @@
 // Gradleのルート名とモジュール構成を定義します。バックエンドを単一ビルドへ参加させるための設定です。
 
 rootProject.name = 'talkon'
-include 'backend', 'speech-service'
+include 'core-api', 'speech-service'
+project(':core-api').projectDir = file('services/core-api')
+project(':speech-service').projectDir = file('services/speech-service')

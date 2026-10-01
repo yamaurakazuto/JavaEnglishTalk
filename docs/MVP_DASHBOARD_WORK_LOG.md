@@ -54,22 +54,22 @@ Java側もController、Service、Responseに分け、HTTP受付、集計処理�
 
 今回のダッシュボード実装で作業したファイルは次の通りです。
 
-| 種別 | ファイル名                                                                         | 作業内容                                       |
-| ---- | ---------------------------------------------------------------------------------- | ---------------------------------------------- |
-| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
-| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
-| 新規 | `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
-| 変更 | `backend/src/main/java/com/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
-| 変更 | `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
-| 変更 | `backend/src/main/resources/db/migration/V1__initial_schema.sql`                   | Flywayチェックサム維持のため先頭コメントを除去 |
-| 新規 | `frontend/src/features/dashboard/DashboardPage.tsx`                                | ダッシュボード画面全体と画面遷移の実装         |
-| 新規 | `frontend/src/features/dashboard/StudySummary.tsx`                                 | 今日の学習時間と学習日数の表示                 |
-| 新規 | `frontend/src/features/dashboard/ActivityGrid.tsx`                                 | GitHubの草風学習カレンダーの表示               |
-| 新規 | `frontend/src/features/dashboard/DashboardPage.test.tsx`                           | ダッシュボード画面のテスト                     |
-| 変更 | `frontend/src/shared/api.ts`                                                       | ダッシュボード用の型とAPI呼び出しを追加        |
-| 変更 | `frontend/src/App.tsx`                                                             | ログイン後のトップ画面をダッシュボードへ変更   |
-| 変更 | `frontend/src/styles.css`                                                          | ダッシュボードとモバイル表示のスタイル追加     |
-| 新規 | `docs/MVP_DASHBOARD_WORK_LOG.md`                                                   | 実装内容と判断理由を記録する本作業書           |
+| 種別 | ファイル名                                                                                   | 作業内容                                       |
+| ---- | -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 新規 | `services/core-api/src/main/java/com/talkon/dashboard/DashboardController.java`              | ダッシュボードAPIの受付                        |
+| 新規 | `services/core-api/src/main/java/com/talkon/dashboard/DashboardService.java`                 | 学習時間、継続日数、日別活動の集計             |
+| 新規 | `services/core-api/src/main/java/com/talkon/dashboard/DashboardResponse.java`                | APIから返すデータ形式の定義                    |
+| 変更 | `services/core-api/src/main/java/com/talkon/conversation/ConversationSessionRepository.java` | 集計期間内の会話を取得するメソッドの追加       |
+| 変更 | `services/core-api/src/test/java/com/talkon/ConversationIntegrationTest.java`                | ダッシュボードAPIの結合テスト追加              |
+| 変更 | `services/core-api/src/main/resources/db/migration/V1__initial_schema.sql`                   | Flywayチェックサム維持のため先頭コメントを除去 |
+| 新規 | `apps/web/src/features/dashboard/DashboardPage.tsx`                                          | ダッシュボード画面全体と画面遷移の実装         |
+| 新規 | `apps/web/src/features/dashboard/StudySummary.tsx`                                           | 今日の学習時間と学習日数の表示                 |
+| 新規 | `apps/web/src/features/dashboard/ActivityGrid.tsx`                                           | GitHubの草風学習カレンダーの表示               |
+| 新規 | `apps/web/src/features/dashboard/DashboardPage.test.tsx`                                     | ダッシュボード画面のテスト                     |
+| 変更 | `apps/web/src/shared/api.ts`                                                                 | ダッシュボード用の型とAPI呼び出しを追加        |
+| 変更 | `apps/web/src/app/App.tsx`                                                                   | ログイン後のトップ画面をダッシュボードへ変更   |
+| 変更 | `apps/web/src/styles.css`                                                                    | ダッシュボードとモバイル表示のスタイル追加     |
+| 新規 | `docs/MVP_DASHBOARD_WORK_LOG.md`                                                             | 実装内容と判断理由を記録する本作業書           |
 
 ## 4. バックエンドへ追加・変更したもの
 
@@ -95,11 +95,11 @@ GET /api/dashboard
 
 ### 4.2 追加したJavaファイル
 
-#### `backend/src/main/java/com/talkon/dashboard/DashboardController.java`
+#### `services/core-api/src/main/java/com/talkon/dashboard/DashboardController.java`
 
 `GET /api/dashboard` を受け付けるControllerです。認証済みユーザーのIDをServiceへ渡します。
 
-#### `backend/src/main/java/com/talkon/dashboard/DashboardService.java`
+#### `services/core-api/src/main/java/com/talkon/dashboard/DashboardService.java`
 
 会話セッションを読み込み、次の内容をJava上で集計します。
 
@@ -113,23 +113,23 @@ GET /api/dashboard
 
 52週間の開始日は日曜日にそろえています。これは、React側で7行のカレンダーを週単位で並べやすくするためです。
 
-#### `backend/src/main/java/com/talkon/dashboard/DashboardResponse.java`
+#### `services/core-api/src/main/java/com/talkon/dashboard/DashboardResponse.java`
 
 ダッシュボードAPI専用の返却形式です。日別データは内部の `DailyActivity` レコードにまとめました。
 
 ### 4.3 変更したJavaファイル
 
-#### `backend/src/main/java/com/talkon/conversation/ConversationSessionRepository.java`
+#### `services/core-api/src/main/java/com/talkon/conversation/ConversationSessionRepository.java`
 
 指定ユーザーの指定日時以降の会話を、開始日時順で取得するRepositoryメソッドを追加しました。全期間のデータを毎回読むのではなく、ダッシュボードに必要な期間だけ取得します。
 
-#### `backend/src/test/java/com/talkon/ConversationIntegrationTest.java`
+#### `services/core-api/src/test/java/com/talkon/ConversationIntegrationTest.java`
 
 会話を開始した後にダッシュボードAPIを呼び出し、学習時間、学習日数、日別活動が返ることを確認するテストを追加しました。
 
 ### 4.4 マイグレーションファイルについて
 
-`backend/src/main/resources/db/migration/V1__initial_schema.sql` は、以前追加されていた先頭コメントを取り除き、適用時の内容へ戻しました。
+`services/core-api/src/main/resources/db/migration/V1__initial_schema.sql` は、以前追加されていた先頭コメントを取り除き、適用時の内容へ戻しました。
 
 Flywayの適用済みマイグレーションは、コメントだけの変更でもチェックサムが変わります。そのため、「全ファイルへ先頭コメントを付ける」というルールの例外として扱い、適用済みファイルは変更しません。
 
@@ -137,37 +137,37 @@ Flywayの適用済みマイグレーションは、コメントだけの変更�
 
 ### 5.1 追加したReactファイル
 
-#### `frontend/src/features/dashboard/DashboardPage.tsx`
+#### `apps/web/src/features/dashboard/DashboardPage.tsx`
 
 ダッシュボード画面全体を管理します。表示時にダッシュボードAPIを呼び、学習概要と学習カレンダーへデータを渡します。
 
 会話ボタンを押した場合は既存の会話開始APIを利用します。継続中の会話がある場合は「会話を再開する」「会話を続ける」と表示し、ない場合は「会話を始める」「新しい会話」と表示します。
 
-#### `frontend/src/features/dashboard/StudySummary.tsx`
+#### `apps/web/src/features/dashboard/StudySummary.tsx`
 
 今日の学習時間、連続学習日数、学習した日数をカードで表示します。秒数は画面内で読みやすい分・時間表記へ変換します。
 
-#### `frontend/src/features/dashboard/ActivityGrid.tsx`
+#### `apps/web/src/features/dashboard/ActivityGrid.tsx`
 
 直近52週間のデータを7行で並べ、GitHubの草に似た学習カレンダーを表示します。各マスには日付、会話回数、学習時間をツールチップとして設定しています。
 
 横幅の小さい画面では、カレンダー部分だけを横スクロールできます。ページ全体が横に広がらないようにしています。
 
-#### `frontend/src/features/dashboard/DashboardPage.test.tsx`
+#### `apps/web/src/features/dashboard/DashboardPage.test.tsx`
 
 APIの返却データを使い、学習時間と連続日数が表示されること、会話と履歴の操作が表示されることを確認します。
 
 ### 5.2 変更したReact・共通ファイル
 
-#### `frontend/src/shared/api.ts`
+#### `apps/web/src/shared/api.ts`
 
 ダッシュボードAPIの型として `DailyActivity` と `DashboardData` を追加し、`api.dashboard()` から取得できるようにしました。
 
-#### `frontend/src/App.tsx`
+#### `apps/web/src/app/App.tsx`
 
 ログイン後のルート画面 `/` を、以前の簡易ホーム画面から `DashboardPage` へ置き換えました。既存の認証、会話、履歴ルートはそのまま利用しています。
 
-#### `frontend/src/styles.css`
+#### `apps/web/src/styles.css`
 
 次のダッシュボード用スタイルを追加しました。
 

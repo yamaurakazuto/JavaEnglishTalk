@@ -17,19 +17,19 @@
 
 ## 3. 変更した場所
 
-| 対象                                                      | 作業内容                                                                  |
-| --------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `backend/src/main/java/com/talkon/TalkOnApplication.java` | 起動クラスとmainメソッドの説明を追加                                      |
-| `backend/src/main/java/com/talkon/auth/`                  | 認証、CSRF、自動ログイン、Spring Security設定の型・メソッドコメントを追加 |
-| `backend/src/main/java/com/talkon/common/`                | API例外、共通エラー、ログ処理の型・メソッドコメントを追加                 |
-| `backend/src/main/java/com/talkon/conversation/`          | 会話Controller、Service、Entity、DTO、Repository、AI境界のコメントを追加  |
-| `backend/src/main/java/com/talkon/dashboard/`             | ダッシュボード集計とレスポンスの型・メソッドコメントを追加                |
-| `backend/src/main/java/com/talkon/feedback/`              | フィードバック生成、状態、保存処理の型・メソッドコメントを追加            |
-| `backend/src/main/java/com/talkon/llm/`                   | ローカルAI、OpenAI接続、プロンプトの型・メソッドコメントを追加            |
-| `backend/src/main/java/com/talkon/speech/`                | STT、TTS、音声ターン処理の型・メソッドコメントを追加                      |
-| `backend/src/main/java/com/talkon/user/`                  | ユーザーEntity、Repository、プロフィールAPIのコメントを追加               |
-| `docs/CODE_READING_GUIDE.md`                              | コメントを起点にコードを読む方法を追加                                    |
-| `docs/JAVA_COMMENT_WORK_LOG.md`                           | 今回の対象、判断、確認方法を記録                                          |
+| 対象                                                                | 作業内容                                                                  |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `services/core-api/src/main/java/com/talkon/TalkOnApplication.java` | 起動クラスとmainメソッドの説明を追加                                      |
+| `services/core-api/src/main/java/com/talkon/auth/`                  | 認証、CSRF、自動ログイン、Spring Security設定の型・メソッドコメントを追加 |
+| `services/core-api/src/main/java/com/talkon/common/`                | API例外、共通エラー、ログ処理の型・メソッドコメントを追加                 |
+| `services/core-api/src/main/java/com/talkon/conversation/`          | 会話Controller、Service、Entity、DTO、Repository、AI境界のコメントを追加  |
+| `services/core-api/src/main/java/com/talkon/dashboard/`             | ダッシュボード集計とレスポンスの型・メソッドコメントを追加                |
+| `services/core-api/src/main/java/com/talkon/feedback/`              | フィードバック生成、状態、保存処理の型・メソッドコメントを追加            |
+| `services/core-api/src/main/java/com/talkon/llm/`                   | ローカルAI、OpenAI接続、プロンプトの型・メソッドコメントを追加            |
+| `services/core-api/src/main/java/com/talkon/speech/`                | STT、TTS、音声ターン処理の型・メソッドコメントを追加                      |
+| `services/core-api/src/main/java/com/talkon/user/`                  | ユーザーEntity、Repository、プロフィールAPIのコメントを追加               |
+| `docs/CODE_READING_GUIDE.md`                                        | コメントを起点にコードを読む方法を追加                                    |
+| `docs/JAVA_COMMENT_WORK_LOG.md`                                     | 今回の対象、判断、確認方法を記録                                          |
 
 ## 4. コメントの読み方
 
@@ -40,8 +40,8 @@
 変更前に次を実行し、既存テストが成功することを確認した。
 
 ```bash
-./gradlew :backend:test --console=plain
-npm test --prefix frontend -- --run
+./gradlew :core-api:test --console=plain
+npm test --prefix apps/web -- --run
 ```
 
 変更後はJavaのコンパイル、バックエンドテスト、Spotless、フロントエンドテスト、型検査、Lintを実行する。

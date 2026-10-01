@@ -94,12 +94,12 @@ TalkOnでは、`prompt_tokens`を入力トークン、`completion_tokens`を出�
 
 主な実装場所は次のとおりです。
 
-- `backend/src/main/java/com/talkon/llm/AiClientConfig.java`
-- `backend/src/main/java/com/talkon/conversation/ConversationService.java`
-- `backend/src/main/java/com/talkon/conversation/LlmCostCalculator.java`
-- `backend/src/main/java/com/talkon/conversation/ConversationSession.java`
-- `frontend/src/App.tsx`
-- `frontend/src/features/conversation/FeedbackPanel.tsx`
+- `services/core-api/src/main/java/com/talkon/llm/AiClientConfig.java`
+- `services/core-api/src/main/java/com/talkon/conversation/ConversationService.java`
+- `services/core-api/src/main/java/com/talkon/conversation/LlmCostCalculator.java`
+- `services/core-api/src/main/java/com/talkon/conversation/ConversationSession.java`
+- `apps/web/src/features/conversation/ConversationPage.tsx`
+- `apps/web/src/features/conversation/FeedbackPanel.tsx`
 
 ## 6. 画面に表示される概算料金
 
